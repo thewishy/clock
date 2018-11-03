@@ -13,13 +13,15 @@ import sensor_ntp
 import sensor_distance
 import action_buzz
 import input_gcal
+import sensor_heating
 import action_sonos
+import action_light
 from lib import display_text
 from lib import display_text_seconds
-    
+
 
 ### INIT WORK ###
-	
+
 #Setup I2C Multiplexer
 mux.i2c_mux_setup(0b00011111)
 
@@ -58,11 +60,23 @@ distance_process = Process(target=sensor_distance.check_distance, args=(distance
 distance_process.daemon = True
 distance_process.start()
 
+#Setup heating HTTP Process
+heating_queue = Queue()
+heating_process = Process(target=sensor_heating.run, args=(heating_queue,))
+heating_process.daemon = True
+heating_process.start()
+
 #Setup Sonos Process
 sonos_queue = Queue()
-sonos_process = Process(target=action_sonos.sonos, args=(sonos_queue,buzzer_queue))
+sonos_process = Process(target=action_sonos.sonos, args=(sonos_queue,buzzer_queue, heating_queue))
 sonos_process.daemon = True
 sonos_process.start()
+
+#Setup Light Process
+light_queue = Queue()
+light_process = Process(target=action_light.light, args=(light_queue,))
+light_process.daemon = True
+light_process.start()
 
 #Setup Status
 # states [Clear, Pre-Alarm, Alarm, Snooze, No-Alarm]
@@ -71,19 +85,20 @@ warned = "No"
 snooze_until = None
 
 #Setup 7 Segment Displays
-big_segment = SevenSegment.SevenSegment(address=0x72)
-small_segment = SevenSegment.SevenSegment(address=0x71)
+clock_segment = SevenSegment.SevenSegment(address=0x72)
+alarm_segment = SevenSegment.SevenSegment(address=0x71)
 
 # Initialize the display. Must be called once before using the display.
-big_segment.begin()
-small_segment.begin()
+clock_segment.begin()
+alarm_segment.begin()
 
 # Toggle colon
 #segment.set_colon(second % 2)              # Toggle colon at 1Hz
-big_segment.set_colon(True) 
+clock_segment.set_colon(True) 
 
 # Set Left Colon 
-#big_segment.set_left_colon(False)
+#clock_segment.set_left_colon(False)
+
 
 print "Press CTRL+Z to exit"
 
@@ -97,8 +112,8 @@ while(True):
   while (not ntp_queue.empty()):
     ntp_bad=ntp_queue.get()
     
-  while ((state == "Clear" or "No-Alarm") and not gcal_queue.empty()):
-    print "Alarm time message action"
+  while ((state == "Clear" or state == "No-Alarm") and not gcal_queue.empty()):
+    print "Alarm time message action", state
     test_alarm=gcal_queue.get()
     if (test_alarm is None):
       print "Alarm is none, which is OK"
@@ -204,6 +219,7 @@ while(True):
         print "Pre-Alarm - Setting state"
         state = "Pre-Alarm"
         sonos_queue.put("Pre-Alarm")
+        light_queue.put("Pre-Alarm")
     # Over a day for the next alarm?
     elif (delta >= 86400):
       if (state != "No-Alarm"):
@@ -215,38 +231,46 @@ while(True):
     state = "No-Alarm"
     
   # Set fixed decimal, top right of display
-  big_segment.set_fixed_decimal(ntp_bad)
-  big_segment.print_number_str(display_text(datetime.datetime.now()))
+  if (ntp_bad==1):
+    #print "Got bad NTP, displaying"
+    clock_segment.set_fixed_decimal(1)
+  elif (ntp_bad==2):
+    #print "Got bad comms, displaying"
+    clock_segment.set_fixed_decimal(int(time.time() % 2))
+  else:
+    clock_segment.set_fixed_decimal(0)
+  
+  clock_segment.print_number_str(display_text(datetime.datetime.now()))
   
   # set brightness
-  big_segment.set_brightness(brightness)
+  clock_segment.set_brightness(brightness)
   # Write the display buffer to the hardware.  This must be called to
   # update the actual display LEDs.
-  big_segment.write_display()
-  small_segment.clear()
+  clock_segment.write_display()
+  alarm_segment.clear()
   if (state == "Clear"):
-    small_segment.set_colon(True) 
-    small_segment.print_number_str(display_text(next_alarm))
+    alarm_segment.set_colon(True) 
+    alarm_segment.print_number_str(display_text(next_alarm))
   elif (state == "Pre-Alarm"):     
-    small_segment.set_colon(True) 
-    small_segment.print_number_str(display_text_seconds(delta))
+    alarm_segment.set_colon(True) 
+    alarm_segment.print_number_str(display_text_seconds(delta))
   elif (state == "Alarm"):
     if (int(round(time.time() * 1000))%1000 > 500):
-      small_segment.set_colon(True) 
-      small_segment.print_number_str(display_text(next_alarm))  
+      alarm_segment.set_colon(True) 
+      alarm_segment.print_number_str(display_text(next_alarm))  
     else:
-      small_segment.set_colon(True) 
-      small_segment.print_number_str("")
+      alarm_segment.set_colon(True) 
+      alarm_segment.print_number_str("")
   elif (state == "Snooze"):
-    small_segment.set_colon(True) 
-    small_segment.print_number_str(display_text_seconds(snoozedelta))
+    alarm_segment.set_colon(True) 
+    alarm_segment.print_number_str(display_text_seconds(snoozedelta))
   else:
-    small_segment.set_colon(False) 
-    small_segment.print_number_str("----")
+    alarm_segment.set_colon(False) 
+    alarm_segment.print_number_str("----")
   
   
-  small_segment.set_brightness(brightness)
-  small_segment.write_display() 
+  alarm_segment.set_brightness(brightness)
+  alarm_segment.write_display() 
   # Wait
   if (state == "Alarm"):
     time.sleep(0.1)

@@ -1,7 +1,8 @@
 import requests
 import time
 import datetime
-from multiprocessing import Queue
+
+from multiprocessing import Process, Queue
 
 class ConnectionError(Exception):
   pass
@@ -10,23 +11,37 @@ def make_rest_call(URL):
   r = requests.get(URL)
   
   if (r.status_code == 200 and r.json()['status'] == "success"):
-    print "SONOS Api Call Sucess", URL, r.status_code, r.json()
+    print "SONOS Api Call Success", URL, r.status_code, r.json()
   else:
     print "SONOS Api Call Fail", URL, r.status_code, r.json()
-    raise ConnectionError("Recieved bad response", r.status_code, "JSON Message", r.json())
+    raise ConnectionError("Received bad response", r.status_code, "JSON Message", r.json())
 
 def check_playing():
   print "Checking"
   r = requests.get('http://192.168.1.114:5005/bedroom/state')
   print "Result", r.json()
   if (r.status_code == 200 and r.json()['playbackState'] == "PLAYING"):
-    print "SONOS Check Sucess"
+    print "SONOS Check Success"
   else:
     print "SONOS Api Call Fail", URL, r.status_code, r.json()
-    raise ConnectionError("Recieved bad response", r.status_code, "JSON Message", r.json())
-   
+    raise ConnectionError("Received bad response", r.status_code, "JSON Message", r.json())
+
+def calc_volume(heatingstate, windowstate):
+  if (datetime.datetime.now().hour >= 22 or datetime.datetime.now().hour < 6):
+    # Late night, quiet as possible
+    base = 4
+  else:
+    # Rest of the day, a little louder
+    base = 7
+  if (heatingstate==1):
+    base += 5
+  elif (windowstate==1):
+    base += 3
+  return str(base)
     
-def sonos(queue, buzzer_queue):
+def sonos(queue, buzzer_queue, heating_queue):
+  heatingstate = 0
+  windowstate = 0
   while (True):
     while (not queue.empty()):
       action=queue.get()
@@ -37,12 +52,8 @@ def sonos(queue, buzzer_queue):
           # Leave any speaker group
           make_rest_call('http://192.168.1.18:5005/bedroom/leave')
           # Set Volume
-          if (datetime.datetime.now().hour >= 22 or datetime.datetime.now().hour < 6):
-            # Late night, quiet as possible
-            make_rest_call('http://192.168.1.18:5005/bedroom/volume/4')
-          else:
-            # Rest of the day, a little louder
-            make_rest_call('http://192.168.1.18:5005/bedroom/volume/7')
+          call = 'http://192.168.1.18:5005/bedroom/volume/' + calc_volume(heatingstate, windowstate)
+          make_rest_call(call)
           # Switch on Radio 4
           make_rest_call('http://192.168.1.18:5005/bedroom/favorite/BBC Radio 4')
           # Set sleep timer (In seconds)
@@ -87,4 +98,18 @@ def sonos(queue, buzzer_queue):
         except:
           print "Well, that went wrong... ACTIVATING THE CLAXON!"
           buzzer_queue.put("alarm_start")
+    while (not heating_queue.empty()):
+      try:
+        newstate = heating_queue.get()
+        print "Got info from automation system: ", newstate
+        if (newstate<2):
+          heatingstate = newstate
+        else:
+          newstate = newstate - 2
+          print "Window State: ", newstate
+          windowstate=newstate
+        call = 'http://192.168.1.18:5005/bedroom/volume/' + calc_volume(heatingstate, windowstate)
+        make_rest_call(call)
+      except:
+        print "Heating queue processing failed"
     time.sleep(0.5)
