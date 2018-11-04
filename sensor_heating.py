@@ -4,6 +4,7 @@ Very simple HTTP server in python.
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import SocketServer
 from multiprocessing import Queue
+import time
 
 class QueuingHTTPServer(HTTPServer):
     def __init__(self, server_address, RequestHandlerClass, queue, bind_and_activate=True):
