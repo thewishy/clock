@@ -21,10 +21,11 @@ class S(BaseHTTPRequestHandler):
         print self.path
         if (self.path == "/heaton"):
           print "Heat On"
-          time.sleep(5)
+          time.sleep(7)
           self.server.data_queue.put(1);
         if (self.path == "/heatoff"):
           print "Heat Off"
+          time.sleep(2)
           self.server.data_queue.put(0);
         if (self.path == "/windowopen"):
           print "Window Open"
