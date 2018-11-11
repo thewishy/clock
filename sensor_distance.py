@@ -18,7 +18,7 @@ def VL53L0X_decode_vcsel_period(vcsel_period_reg):
     return vcsel_period_pclks;
 
 
-def check_distance(queue, buzzer_queue):
+def check_distance(queue, buzzer_queue, light_queue):
   VL53L0X_REG_IDENTIFICATION_MODEL_ID		= 0x00c0
   VL53L0X_REG_IDENTIFICATION_REVISION_ID		= 0x00c2
   VL53L0X_REG_PRE_RANGE_CONFIG_VCSEL_PERIOD	= 0x0050
@@ -87,7 +87,7 @@ def check_distance(queue, buzzer_queue):
         #print "signal count " + str(makeuint16(data[9], data[8]))
         #		tmpuint16 = VL53L0X_MAKEUINT16(localBuffer[11], localBuffer[10]);
         distance = makeuint16(data[11], data[10])
-        if (distance < 500):
+        if (distance < 300):
           print "Triggered ", distance
           # See if someone has removed hand from sensor and then put it back
           if last_triggered < last_cleared:
@@ -115,6 +115,10 @@ def check_distance(queue, buzzer_queue):
             last_triggered = time.time()  
           else:
             print "Skip"
+        elif (distance<500):
+          print "Distance Sensor: Turn on the light!"
+          light_queue.put("Toggle")
+          time.sleep(5)
         else:
           last_cleared = time.time()
         

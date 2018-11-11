@@ -23,6 +23,8 @@ from lib import display_text_seconds
 ### INIT WORK ###
 
 #Setup I2C Multiplexer
+#I2C mux was added when I had problems with I2C comms on the 1.2" Adafruit 7 Segment
+#This problem wasn't really solved by the mux, running the IO at 5v sorted it though.. Anyway, it's wired in now...
 mux.i2c_mux_setup(0b00011111)
 
 
@@ -54,9 +56,15 @@ buzzer_process = Process(target=action_buzz.buzzer, args=(buzzer_queue,))
 buzzer_process.daemon = True
 buzzer_process.start()
 
+#Setup Light Process
+light_queue = Queue()
+light_process = Process(target=action_light.light, args=(light_queue,))
+light_process.daemon = True
+light_process.start()
+
 #Setup Distance Monitor process
 distance_queue = Queue()
-distance_process = Process(target=sensor_distance.check_distance, args=(distance_queue,buzzer_queue))
+distance_process = Process(target=sensor_distance.check_distance, args=(distance_queue,buzzer_queue,light_queue))
 distance_process.daemon = True
 distance_process.start()
 
@@ -71,12 +79,6 @@ sonos_queue = Queue()
 sonos_process = Process(target=action_sonos.sonos, args=(sonos_queue,buzzer_queue, heating_queue))
 sonos_process.daemon = True
 sonos_process.start()
-
-#Setup Light Process
-light_queue = Queue()
-light_process = Process(target=action_light.light, args=(light_queue,))
-light_process.daemon = True
-light_process.start()
 
 #Setup Status
 # states [Clear, Pre-Alarm, Alarm, Snooze, No-Alarm]
