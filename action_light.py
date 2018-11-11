@@ -4,34 +4,35 @@ import datetime
 
 from multiprocessing import Process, Queue
 
+from cfgmgr import get_config
+cfg = get_config()
 
 
 def light_wake():
-  headers = { 'Authorization': "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhNWYyMzQxMjYwZDU0NTYxOTgyM2M3NGNmZjdmZGVlOSIsImlhdCI6MTU0MDMyNDk3MywiZXhwIjoxODU1Njg0OTczfQ.HM7GefyW-KZ1ut3gNx0hIsmwVVh8RfI6U_snqGc_yas" }
-
-  content = {"entity_id":"scene.steve_wakeup"}
-  requests.post("http://192.168.1.15:8123/api/services/scene/turn_on", json=content, headers=headers)
-
+  headers = { 'Authorization': cfg['light']['token'] }
+  content = {"entity_id":cfg['light']['entity'],"transition":"300","brightness":"256","kelvin":"4000"}
+  requests.post(cfg['light']['address']+"/api/services/light/turn_on", json=content, headers=headers)
+  
 def light_off():
-  headers = { 'Authorization': "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhNWYyMzQxMjYwZDU0NTYxOTgyM2M3NGNmZjdmZGVlOSIsImlhdCI6MTU0MDMyNDk3MywiZXhwIjoxODU1Njg0OTczfQ.HM7GefyW-KZ1ut3gNx0hIsmwVVh8RfI6U_snqGc_yas" }
+  headers = { 'Authorization': cfg['light']['token'] }
 
   content = {"entity_id":"light.tradfri_bulb_e14_ws_opal_400lm"}
-  requests.post("http://192.168.1.15:8123/api/services/light/turn_off", json=content, headers=headers)
+  requests.post(cfg['light']['address']+"/api/services/light/turn_off", json=content, headers=headers)
 
 def light_on():
-  headers = { 'Authorization': "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhNWYyMzQxMjYwZDU0NTYxOTgyM2M3NGNmZjdmZGVlOSIsImlhdCI6MTU0MDMyNDk3MywiZXhwIjoxODU1Njg0OTczfQ.HM7GefyW-KZ1ut3gNx0hIsmwVVh8RfI6U_snqGc_yas" }
+  headers = { 'Authorization': cfg['light']['token'] }
   if (datetime.datetime.now().hour >= 17 or datetime.datetime.now().hour < 6):
     #Night setting
-    content = {"entity_id":"light.tradfri_bulb_e14_ws_opal_400lm","transition":"5","brightness":"128","kelvin":"2700"}
+    content = {"entity_id":cfg['light']['entity'],"transition":"5","brightness":"128","kelvin":"2700"}
   else:
     #Day Setting
-    content = {"entity_id":"light.tradfri_bulb_e14_ws_opal_400lm","transition":"5","brightness":"256","kelvin":"4000"}
+    content = {"entity_id":cfg['light']['entity'],"transition":"5","brightness":"256","kelvin":"4000"}
     
-  requests.post("http://192.168.1.15:8123/api/services/light/turn_on", json=content, headers=headers)
+  requests.post(cfg['light']['address']+"/api/services/light/turn_on", json=content, headers=headers)
   
 def check_state():
-  headers = { 'Authorization': "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhNWYyMzQxMjYwZDU0NTYxOTgyM2M3NGNmZjdmZGVlOSIsImlhdCI6MTU0MDMyNDk3MywiZXhwIjoxODU1Njg0OTczfQ.HM7GefyW-KZ1ut3gNx0hIsmwVVh8RfI6U_snqGc_yas" }
-  r = requests.get('http://192.168.1.15:8123/api/states/light.tradfri_bulb_e14_ws_opal_400lm', headers=headers)
+  headers = { 'Authorization': cfg['light']['token'] }
+  r = requests.get(cfg['light']['address']+'/api/states/'+cfg['light']['entity'], headers=headers)
   print "Light state", r.json()
   if (r.json()['state']=="off"):
     return False
@@ -51,14 +52,14 @@ def light(queue):
           print "Well, lighting went wrong!"
           
       if (action == "Toggle"):
-        try:
+        #try:
           if check_state():
             print "Turning off light"
             light_off()
           else:
             print "Turning on the light"
             light_on()
-        except:
-          print "That went wrong"
+        #except:
+          #print "That went wrong"
           
     time.sleep(0.5)

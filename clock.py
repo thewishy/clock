@@ -7,6 +7,9 @@ from multiprocessing import Process, Queue
 from Adafruit_LED_Backpack import SevenSegment
 
 # Project Modules
+from cfgmgr import get_config
+cfg = get_config()
+
 import mux
 import sensor_lux
 import sensor_ntp
@@ -22,18 +25,20 @@ from lib import display_text_seconds
 
 ### INIT WORK ###
 
-#Setup I2C Multiplexer
-#I2C mux was added when I had problems with I2C comms on the 1.2" Adafruit 7 Segment
-#This problem wasn't really solved by the mux, running the IO at 5v sorted it though.. Anyway, it's wired in now...
-mux.i2c_mux_setup(0b00011111)
+if (cfg['core']['mux']):
+  #Setup I2C Multiplexer
+  #I2C mux was added when I had problems with I2C comms on the 1.2" Adafruit 7 Segment
+  #This problem wasn't really solved by the mux, running the IO at 5v sorted it though.. Anyway, it's wired in now...
+  mux.i2c_mux_setup(0b00011111)
 
 
 
 #Setup Lux Monitor process
 lux_queue = Queue()
-lux_process = Process(target=sensor_lux.check_brightness, args=(lux_queue,))
-lux_process.daemon = True
-lux_process.start()
+if (cfg['core']['lux']):
+  lux_process = Process(target=sensor_lux.check_brightness, args=(lux_queue,))
+  lux_process.daemon = True
+  lux_process.start()
 brightness = 1
 
 #Setup NTP Monitor process
@@ -58,9 +63,10 @@ buzzer_process.start()
 
 #Setup Light Process
 light_queue = Queue()
-light_process = Process(target=action_light.light, args=(light_queue,))
-light_process.daemon = True
-light_process.start()
+if (cfg['core']['light']):
+  light_process = Process(target=action_light.light, args=(light_queue,))
+  light_process.daemon = True
+  light_process.start()
 
 #Setup Distance Monitor process
 distance_queue = Queue()
@@ -70,9 +76,10 @@ distance_process.start()
 
 #Setup heating HTTP Process
 heating_queue = Queue()
-heating_process = Process(target=sensor_heating.run, args=(heating_queue,))
-heating_process.daemon = True
-heating_process.start()
+if (cfg['core']['http']):
+  heating_process = Process(target=sensor_heating.run, args=(heating_queue,))
+  heating_process.daemon = True
+  heating_process.start()
 
 #Setup Sonos Process
 sonos_queue = Queue()
@@ -87,8 +94,8 @@ warned = "No"
 snooze_until = None
 
 #Setup 7 Segment Displays
-clock_segment = SevenSegment.SevenSegment(address=0x72)
-alarm_segment = SevenSegment.SevenSegment(address=0x71)
+clock_segment = SevenSegment.SevenSegment(address=int(cfg['core']['clock_addr'],16))
+alarm_segment = SevenSegment.SevenSegment(address=int(cfg['core']['alarm_addr'],16))
 
 # Initialize the display. Must be called once before using the display.
 clock_segment.begin()
@@ -103,6 +110,9 @@ clock_segment.set_colon(True)
 
 
 print "Press CTRL+Z to exit"
+
+#Quick test code
+#light_queue.put("Toggle")
 
 ### BEGIN WORK ###
 # Continually update the time on a 4 char, 7-segment display

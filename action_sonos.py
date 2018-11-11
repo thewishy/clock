@@ -4,6 +4,9 @@ import datetime
 
 from multiprocessing import Process, Queue
 
+from cfgmgr import get_config
+cfg = get_config()
+
 class ConnectionError(Exception):
   pass
 

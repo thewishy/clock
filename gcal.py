@@ -8,6 +8,9 @@ from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
 
+from cfgmgr import get_config
+cfg = get_config()
+
 import datetime
 
 try:
@@ -69,7 +72,7 @@ def main():
     now = datetime.datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
     print 'Getting the upcoming 10 events' 
     eventsResult = service.events().list(
-        calendarId='ilovueprdedpftlkpdgq9vmej0@group.calendar.google.com', timeMin=now, maxResults=1, singleEvents=True,
+        calendarId=cfg['calendar']['id'], timeMin=now, maxResults=1, singleEvents=True,
         orderBy='startTime').execute()
     events = eventsResult.get('items', [])
 

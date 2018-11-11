@@ -3,6 +3,11 @@ import struct
 import time
 from lib import notify_if_changed
 
+from cfgmgr import get_config
+cfg = get_config()
+alarmthreshold = int(cfg['distance']['alarmthreshold'])
+lightthreshold = int(cfg['distance']['lightthreshold'])
+
 def bswap(val):
     return struct.unpack('<H', struct.pack('>H', val))[0]
 def mread_word_data(adr, reg):
@@ -87,7 +92,7 @@ def check_distance(queue, buzzer_queue, light_queue):
         #print "signal count " + str(makeuint16(data[9], data[8]))
         #		tmpuint16 = VL53L0X_MAKEUINT16(localBuffer[11], localBuffer[10]);
         distance = makeuint16(data[11], data[10])
-        if (distance < 300):
+        if (distance < alarmthreshold):
           print "Triggered ", distance
           # See if someone has removed hand from sensor and then put it back
           if last_triggered < last_cleared:
@@ -115,10 +120,10 @@ def check_distance(queue, buzzer_queue, light_queue):
             last_triggered = time.time()  
           else:
             print "Skip"
-        elif (distance<500):
+        elif (distance<lightthreshold):
           print "Distance Sensor: Turn on the light!"
           light_queue.put("Toggle")
-          time.sleep(5)
+          time.sleep(3)
         else:
           last_cleared = time.time()
         
