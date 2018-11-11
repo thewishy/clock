@@ -16,7 +16,7 @@ def light_wake():
 def light_off():
   headers = { 'Authorization': cfg['light']['token'] }
 
-  content = {"entity_id":"light.tradfri_bulb_e14_ws_opal_400lm"}
+  content = {"entity_id":cfg['light']['entity']}
   requests.post(cfg['light']['address']+"/api/services/light/turn_off", json=content, headers=headers)
 
 def light_on():
