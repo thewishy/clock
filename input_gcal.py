@@ -67,14 +67,14 @@ def gcal(queue):
   
   
   while True:
-    print "Runnng GCAL"
+    #print "Runnng GCAL"
     try:
       credentials = get_credentials()
       http = credentials.authorize(httplib2.Http())
       service = discovery.build('calendar', 'v3', http=http)
 
       now = datetime.datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
-      print 'Getting the upcoming alarm' 
+      #print 'Getting the upcoming alarm' 
       eventsResult = service.events().list(
           calendarId=cfg['calendar']['id'], timeMin=now, maxResults=1, singleEvents=True,
           orderBy='startTime').execute()
