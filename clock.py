@@ -112,7 +112,7 @@ clock_segment.set_colon(True)
 print "Press CTRL+Z to exit"
 
 #Quick test code
-#light_queue.put("Toggle")
+light_queue.put("Toggle")
 
 ### BEGIN WORK ###
 # Continually update the time on a 4 char, 7-segment display

@@ -9,18 +9,18 @@ cfg = get_config()
 
 
 def light_wake():
-  headers = { 'Authorization': cfg['light']['token'] }
+  headers = { 'Authorization': cfg['homeassistant']['token'] }
   content = {"entity_id":cfg['light']['entity'],"transition":"300","brightness":"256","kelvin":"4000"}
-  requests.post(cfg['light']['address']+"/api/services/light/turn_on", json=content, headers=headers)
+  requests.post(cfg['homeassistant']['address']+"/api/services/light/turn_on", json=content, headers=headers)
   
 def light_off():
-  headers = { 'Authorization': cfg['light']['token'] }
+  headers = { 'Authorization': cfg['homeassistant']['token'] }
 
   content = {"entity_id":cfg['light']['entity']}
-  requests.post(cfg['light']['address']+"/api/services/light/turn_off", json=content, headers=headers)
+  requests.post(cfg['homeassistant']['address']+"/api/services/light/turn_off", json=content, headers=headers)
 
 def light_on():
-  headers = { 'Authorization': cfg['light']['token'] }
+  headers = { 'Authorization': cfg['homeassistant']['token'] }
   if (datetime.datetime.now().hour >= 17 or datetime.datetime.now().hour < 6):
     #Night setting
     content = {"entity_id":cfg['light']['entity'],"transition":"5","brightness":"128","kelvin":"2700"}
@@ -28,11 +28,11 @@ def light_on():
     #Day Setting
     content = {"entity_id":cfg['light']['entity'],"transition":"5","brightness":"256","kelvin":"4000"}
     
-  requests.post(cfg['light']['address']+"/api/services/light/turn_on", json=content, headers=headers)
+  requests.post(cfg['homeassistant']['address']+"/api/services/light/turn_on", json=content, headers=headers)
   
 def check_state():
-  headers = { 'Authorization': cfg['light']['token'] }
-  r = requests.get(cfg['light']['address']+'/api/states/'+cfg['light']['entity'], headers=headers)
+  headers = { 'Authorization': cfg['homeassistant']['token'] }
+  r = requests.get(cfg['homeassistant']['address']+'/api/states/'+cfg['light']['entity'], headers=headers)
   print "Light state", r.json()
   if (r.json()['state']=="off"):
     return False
