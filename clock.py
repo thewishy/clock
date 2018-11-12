@@ -19,6 +19,7 @@ import input_gcal
 import sensor_heating
 import action_sonos
 import action_light
+import action_coffee
 from lib import display_text
 from lib import display_text_seconds
 
@@ -68,6 +69,13 @@ if (cfg['core']['light']):
   light_process.daemon = True
   light_process.start()
 
+#Setup Light Process
+coffee_queue = Queue()
+if (cfg['core']['coffee']):
+  coffee_process = Process(target=action_coffee.coffee, args=(coffee_queue,))
+  coffee_process.daemon = True
+  coffee_process.start()
+  
 #Setup Distance Monitor process
 distance_queue = Queue()
 distance_process = Process(target=sensor_distance.check_distance, args=(distance_queue,buzzer_queue,light_queue))
@@ -112,7 +120,7 @@ clock_segment.set_colon(True)
 print "Press CTRL+Z to exit"
 
 #Quick test code
-light_queue.put("Toggle")
+#coffee_queue.put("Make")
 
 ### BEGIN WORK ###
 # Continually update the time on a 4 char, 7-segment display
@@ -155,12 +163,14 @@ while(True):
           warned = "No"
           # Switch Sonos to Radio mode
           sonos_queue.put("Radio")
+          coffee_queue.put("Make")
         elif (state=="Snooze"):
           print "Clearing Alarm"
           state = "Clear"
           next_alarm = None
           snooze_until = None   
           warned = "No"
+          coffee_queue.put("Make")
         else:
           print "Hmm, that doesn't really mean anything to me"
       elif (distance_action == "Triggered"):
@@ -179,6 +189,10 @@ while(True):
          state = "Snooze"
          snooze_until = next_alarm + datetime.timedelta(minutes=5)
          warned = "No"
+        elif (state=="Pre-Pre-Alarm"):
+         state = "Snooze"
+         snooze_until = next_alarm + datetime.timedelta(minutes=5)
+         warned = "No"
         else:
           print "So you want radio?"
           sonos_queue.put("Radio")
@@ -187,7 +201,7 @@ while(True):
   
   
   # Now process some state
-  # states [Clear, Pre-Alarm, Alarm, Snooze, No-Alarm]
+  # states [Clear, Pre-Pre-Alarm, Pre-Alarm, Alarm, Snooze, No-Alarm]
   # First thing - check if snoozing, clear snooze if required
   if (snooze_until is not None):
     snoozedelta = int(snooze_until.strftime('%s')) - int(datetime.datetime.now().strftime('%s'))
@@ -226,12 +240,17 @@ while(True):
         buzzer_queue.put("beep_once")
         warned = "Yes"
     # Should be 599 for production
-    elif (delta <= 599):
+    elif (delta <= 299):
       if (state != "Pre-Alarm" and state != "Snooze"):
         print "Pre-Alarm - Setting state"
         state = "Pre-Alarm"
         sonos_queue.put("Pre-Alarm")
         light_queue.put("Pre-Alarm")
+    elif (delta <= 599):
+      if (state != "Pre-Pre-Alarm"  and state != "Pre-Alarm" and state != "Snooze"):
+        print "Pre-Pre-Alarm - Setting State"
+        state = "Pre-Pre-Alarm"
+        buzzer_queue.put("beep_once")
     # Over a day for the next alarm?
     elif (delta >= 86400):
       if (state != "No-Alarm"):
@@ -263,7 +282,7 @@ while(True):
   if (state == "Clear"):
     alarm_segment.set_colon(True) 
     alarm_segment.print_number_str(display_text(next_alarm))
-  elif (state == "Pre-Alarm"):     
+  elif (state == "Pre-Alarm" or state == "Pre-Pre-Alarm"):     
     alarm_segment.set_colon(True) 
     alarm_segment.print_number_str(display_text_seconds(delta))
   elif (state == "Alarm"):
