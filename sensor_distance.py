@@ -103,6 +103,8 @@ def check_distance(queue, buzzer_queue, light_queue):
               buzzer_queue.put("beep_twice")
               queue.put("Double")
               last_triggered = time.time()
+              # Twice should be about the max we want. Leave a little time for the hand to be moved
+              time.sleep(1)
             else:
               # First triggering
               print "First Trigger"
@@ -123,6 +125,7 @@ def check_distance(queue, buzzer_queue, light_queue):
         elif (distance<lightthreshold):
           print "Distance Sensor: Turn on the light!"
           light_queue.put("Toggle")
+          # As there is no feedback, and we need to wait for the turnon command to take affect, suspend distance processing for a few seconds
           time.sleep(3)
         else:
           last_cleared = time.time()
