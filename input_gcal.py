@@ -95,4 +95,18 @@ def gcal(queue):
       #time.sleep(30)
     except:
       print "GCAL Error"
-    time.sleep(600)
+    
+    if (alarm_time is not None):
+      delta = int(alarm_time.strftime('%s')) - int(datetime.datetime.now().strftime('%s'))
+      #print delta
+      if (delta < 900):
+        #print "Enhanced Poll"
+        time.sleep(60)
+      elif (delta < 1800):
+        #print "Somewhat enhanced poll"
+        time.sleep(300)
+      else:
+        #print "Standard Poll"
+        time.sleep(600)
+    else:
+      time.sleep(600)
