@@ -22,18 +22,3 @@ def display_text_seconds(delta):
     return "-"+str(minute % 10)+str(second / 10)+str(second % 10)
   else:
     return str(minute / 10)+str(minute % 10)+str(second / 10)+str(second % 10)
-  
-def oldcode():
-  now = datetime.datetime.now()
-  hour = now.hour
-  minute = now.minute
-  #second = now.second
-  
-
-  # big_segment.clear()
-  # Set hours
-  big_segment.set_digit(0, int(hour / 10))     # Tens
-  big_segment.set_digit(1, hour % 10)          # Ones
-  # Set minutes
-  big_segment.set_digit(2, int(minute / 10))   # Tens
-  big_segment.set_digit(3, minute % 10)        # Ones
