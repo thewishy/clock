@@ -1,0 +1,32 @@
+{
+    "core":{
+        "mux":true,
+        "lux":true,
+        "light":true,
+        "http":true,
+	"coffee":false,
+        "clock_addr":"0x72",
+        "alarm_addr":"0x71"
+    },
+    "calendar":{
+        "id":"abc123@group.calendar.google.com"
+    },
+    "sonos":{
+        "address":"http://192.168.1.123:5005",
+	"speaker":"bedroom"
+    },
+    "distance":{
+        "alarmthreshold":"300",
+	"lightthreshold":"500"
+    },
+    "homeassistant":{
+        "address":"http://192.168.1.124:8123",
+        "token":"Bearer abc123"
+    },
+    "coffee":{
+        "entity":"switch.coffee_switch"
+    },
+    "light":{
+        "entity":"light.tradfri_bulb_e14_ws_opal_400lm"
+    }
+}
