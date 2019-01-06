@@ -164,7 +164,7 @@ while(True):
           # Switch Sonos to Radio mode
           sonos_queue.put("Radio")
           coffee_queue.put("Make")
-        elif (state=="Snooze"):
+        elif (state=="Snooze" or state=="Pre-Alarm" or state=="Pre-Pre-Alarm"):
           print "Clearing Alarm"
           state = "Clear"
           next_alarm = None

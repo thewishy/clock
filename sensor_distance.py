@@ -7,6 +7,7 @@ from cfgmgr import get_config
 cfg = get_config()
 alarmthreshold = int(cfg['distance']['alarmthreshold'])
 lightthreshold = int(cfg['distance']['lightthreshold'])
+trigger = cfg['distance']['trigger']
 
 def bswap(val):
     return struct.unpack('<H', struct.pack('>H', val))[0]
@@ -94,34 +95,40 @@ def check_distance(queue, buzzer_queue, light_queue):
         distance = makeuint16(data[11], data[10])
         if (distance < alarmthreshold):
           print "Triggered ", distance
-          # See if someone has removed hand from sensor and then put it back
-          if last_triggered < last_cleared:
-            # Was the trigger / untrigger in the last 3 seconds
-            if last_triggered > time.time()-3:
-              #Second triggering
-              print "Second Trigger"
-              buzzer_queue.put("beep_twice")
-              queue.put("Double")
-              last_triggered = time.time()
-              # Twice should be about the max we want. Leave a little time for the hand to be moved
-              time.sleep(1)
-            else:
-              # First triggering
-              print "First Trigger"
+          if (trigger == "Double"):
+            # Double trigger mode
+            # See if someone has removed hand from sensor and then put it back
+            if last_triggered < last_cleared:
+              # Was the trigger / untrigger in the last 3 seconds
+              if last_triggered > time.time()-3:
+                #Second triggering
+                print "Second Trigger"
+                buzzer_queue.put("beep_twice")
+                queue.put("Double")
+                last_triggered = time.time()
+                # Twice should be about the max we want. Leave a little time for the hand to be moved
+                time.sleep(1)
+              else:
+                # First triggering
+                print "First Trigger"
+                buzzer_queue.put("beep_once")
+                queue.put("Triggered")
+                last_triggered = time.time()
+                print last_triggered
+                print time.time()
+            #Sensor is being held
+            elif last_triggered+1 < time.time():
+
+              print "Retrigger"
               buzzer_queue.put("beep_once")
               queue.put("Triggered")
-              last_triggered = time.time()
-              print last_triggered
-              print time.time()
-          #Sensor is being held
-          elif last_triggered+1 < time.time():
-
-            print "Retrigger"
-            buzzer_queue.put("beep_once")
-            queue.put("Triggered")
-            last_triggered = time.time()  
+              last_triggered = time.time()  
+            else:
+              print "Skip"
           else:
-            print "Skip"
+            print "Single Trigger mode"
+            buzzer_queue.put("beep_twice")
+            queue.put("Double")
         elif (distance<lightthreshold):
           print "Distance Sensor: Turn on the light!"
           light_queue.put("Toggle")
