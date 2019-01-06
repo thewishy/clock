@@ -129,6 +129,7 @@ def check_distance(queue, buzzer_queue, light_queue):
             print "Single Trigger mode"
             buzzer_queue.put("beep_twice")
             queue.put("Double")
+            time.sleep(1)
         elif (distance<lightthreshold):
           print "Distance Sensor: Turn on the light!"
           light_queue.put("Toggle")
