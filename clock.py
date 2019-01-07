@@ -261,47 +261,51 @@ while(True):
   else:
     state = "No-Alarm"
     
-  # Set fixed decimal, top right of display
-  if (ntp_bad==1):
-    #print "Got bad NTP, displaying"
-    clock_segment.set_fixed_decimal(1)
-  elif (ntp_bad==2):
-    #print "Got bad comms, displaying"
-    clock_segment.set_fixed_decimal(int(time.time() % 2))
-  else:
-    clock_segment.set_fixed_decimal(0)
-  
-  clock_segment.print_number_str(display_text(datetime.datetime.now()))
-  
-  # set brightness
-  clock_segment.set_brightness(brightness)
-  # Write the display buffer to the hardware.  This must be called to
-  # update the actual display LEDs.
-  clock_segment.write_display()
-  alarm_segment.clear()
-  if (state == "Clear"):
-    alarm_segment.set_colon(True) 
-    alarm_segment.print_number_str(display_text(next_alarm))
-  elif (state == "Pre-Alarm" or state == "Pre-Pre-Alarm"):     
-    alarm_segment.set_colon(True) 
-    alarm_segment.print_number_str(display_text_seconds(delta))
-  elif (state == "Alarm"):
-    if (int(round(time.time() * 1000))%1000 > 500):
-      alarm_segment.set_colon(True) 
-      alarm_segment.print_number_str(display_text(next_alarm))  
+  try:
+    # Set fixed decimal, top right of display
+    if (ntp_bad==1):
+      #print "Got bad NTP, displaying"
+      clock_segment.set_fixed_decimal(1)
+    elif (ntp_bad==2):
+      #print "Got bad comms, displaying"
+      clock_segment.set_fixed_decimal(int(time.time() % 2))
     else:
+      clock_segment.set_fixed_decimal(0)
+    
+    clock_segment.print_number_str(display_text(datetime.datetime.now()))
+    
+    # set brightness
+    clock_segment.set_brightness(brightness)
+    # Write the display buffer to the hardware.  This must be called to
+    # update the actual display LEDs.
+    clock_segment.write_display()
+    alarm_segment.clear()
+    if (state == "Clear"):
       alarm_segment.set_colon(True) 
-      alarm_segment.print_number_str("")
-  elif (state == "Snooze"):
-    alarm_segment.set_colon(True) 
-    alarm_segment.print_number_str(display_text_seconds(snoozedelta))
-  else:
-    alarm_segment.set_colon(False) 
-    alarm_segment.print_number_str("----")
-  
-  
-  alarm_segment.set_brightness(brightness)
-  alarm_segment.write_display() 
+      alarm_segment.print_number_str(display_text(next_alarm))
+    elif (state == "Pre-Alarm" or state == "Pre-Pre-Alarm"):     
+      alarm_segment.set_colon(True) 
+      alarm_segment.print_number_str(display_text_seconds(delta))
+    elif (state == "Alarm"):
+      if (int(round(time.time() * 1000))%1000 > 500):
+        alarm_segment.set_colon(True) 
+        alarm_segment.print_number_str(display_text(next_alarm))  
+      else:
+        alarm_segment.set_colon(True) 
+        alarm_segment.print_number_str("")
+    elif (state == "Snooze"):
+      alarm_segment.set_colon(True) 
+      alarm_segment.print_number_str(display_text_seconds(snoozedelta))
+    else:
+      alarm_segment.set_colon(False) 
+      alarm_segment.print_number_str("----")
+    
+    
+    alarm_segment.set_brightness(brightness)
+    alarm_segment.write_display() 
+  except Exception as e:
+    print "Error handling LCD"
+    print str(e)
   # Wait
   if (state == "Alarm"):
     time.sleep(0.1)
