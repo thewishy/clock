@@ -40,6 +40,7 @@ def check_distance(queue, buzzer_queue, light_queue):
   
   last_triggered = 0
   last_cleared = 0
+  last_light = 0
 
   #val1 = bus.read_byte_data(address, VL53L0X_REG_IDENTIFICATION_REVISION_ID)
   #print "Revision ID: " + hex(val1)
@@ -122,7 +123,7 @@ def check_distance(queue, buzzer_queue, light_queue):
               print "Retrigger"
               buzzer_queue.put("beep_once")
               queue.put("Triggered")
-              last_triggered = time.time()  
+              last_triggered = time.time()
             else:
               print "Skip"
           else:
@@ -131,10 +132,14 @@ def check_distance(queue, buzzer_queue, light_queue):
             queue.put("Double")
             time.sleep(1)
         elif (distance<lightthreshold):
-          print "Distance Sensor: Turn on the light!"
-          light_queue.put("Toggle")
-          # As there is no feedback, and we need to wait for the turnon command to take affect, suspend distance processing for a few seconds
-          time.sleep(3)
+          if (last_light > time.time()-3):
+            print "Distance Sensor: Turn on the light!"
+            light_queue.put("Toggle")
+            # As there is no feedback, and we need to wait for the turnon command to take affect, suspend distance processing for a few seconds
+            time.sleep(3)
+          else:
+            print "Long distance: Waiting for confirmation"
+            last_light = time.time()
         else:
           last_cleared = time.time()
         
