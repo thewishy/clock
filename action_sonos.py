@@ -21,7 +21,7 @@ def make_rest_call(URL):
 
 def check_playing():
   print "Checking"
-  r = requests.get('http://192.168.1.18:5005/bedroom/state')
+  r = requests.get(cfg['sonos']['address']+cfg['sonos']['speaker']+'/state')
   print "Result", r.json()
   if (r.status_code == 200 and r.json()['playbackState'] == "PLAYING"):
     print "SONOS Check Success"
@@ -53,16 +53,16 @@ def sonos(queue, buzzer_queue, heating_queue):
         try:
           buzzer_queue.put("alarm_stop")
           # Leave any speaker group
-          make_rest_call('http://192.168.1.18:5005/bedroom/leave')
+          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/leave')
           # Set Volume
-          call = 'http://192.168.1.18:5005/bedroom/volume/' + calc_volume(heatingstate, windowstate)
+          call = cfg['sonos']['address']+cfg['sonos']['speaker']+'/volume/' + calc_volume(heatingstate, windowstate)
           make_rest_call(call)
           # Switch on Radio 4
-          make_rest_call('http://192.168.1.18:5005/bedroom/favorite/BBC Radio 4')
+          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/favorite/BBC Radio 4')
           # Set sleep timer (In seconds)
-          make_rest_call('http://192.168.1.18:5005/bedroom/sleep/5400')
+          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/sleep/5400')
           # Unmute
-          make_rest_call('http://192.168.1.18:5005/bedroom/unmute')
+          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/unmute')
 
         except:
           print "Well, that went wrong... But tis only a pre-alarm"
@@ -71,9 +71,9 @@ def sonos(queue, buzzer_queue, heating_queue):
         try:
           buzzer_queue.put("alarm_stop")
           # Leave any speaker group
-          make_rest_call('http://192.168.1.18:5005/bedroom/leave')
+          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/leave')
           # Pause
-          make_rest_call('http://192.168.1.18:5005/bedroom/pause')
+          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/pause')
 
         except:
           print "Well, that went wrong... But tis only a stop"
@@ -81,17 +81,17 @@ def sonos(queue, buzzer_queue, heating_queue):
       if (action == "Alarm"):
         try:
           # Leave any speaker group
-          make_rest_call('http://192.168.1.18:5005/bedroom/leave')
+          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/leave')
           # Set Volume
-          make_rest_call('http://192.168.1.18:5005/bedroom/volume/20')
+          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/volume/20')
           # Switch on Radio 4
-          make_rest_call('http://192.168.1.18:5005/bedroom/favorite/Sailing By')
+          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/favorite/Sailing By')
           # Set sleep timer (In seconds)
-          make_rest_call('http://192.168.1.18:5005/bedroom/sleep/3600')
+          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/sleep/3600')
           # Unmute
-          make_rest_call('http://192.168.1.18:5005/bedroom/unmute')
+          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/unmute')
           # Repeat
-          make_rest_call('http://192.168.1.18:5005/bedroom/repeat/on')         
+          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/repeat/on')         
           for x in range(0, 15):
             if (not queue.empty()):
               break
@@ -111,7 +111,7 @@ def sonos(queue, buzzer_queue, heating_queue):
           newstate = newstate - 2
           print "Window State: ", newstate
           windowstate=newstate
-        call = 'http://192.168.1.18:5005/bedroom/volume/' + calc_volume(heatingstate, windowstate)
+        call = cfg['sonos']['address']+cfg['sonos']['speaker']+'/volume/' + calc_volume(heatingstate, windowstate)
         make_rest_call(call)
       except:
         print "Heating queue processing failed"
