@@ -12,21 +12,27 @@
         "id":"abc123@group.calendar.google.com"
     },
     "sonos":{
-        "address":"http://192.168.1.123:5005",
-	"speaker":"bedroom"
+        "address":"http://192.168.x.x:5005",
+        "speaker":"bedroom"
     },
     "distance":{
         "alarmthreshold":"300",
-	"lightthreshold":"500"
+        "lightthreshold":"500",
+        "trigger":"Double"
     },
     "homeassistant":{
-        "address":"http://192.168.1.124:8123",
-        "token":"Bearer abc123"
+        "address":"http://192.168.1.15:8123",
+        "token":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI0YTkxM2M1Nzk0MWI0NTM5YjNlODYxNmRjZWUxMmExNiIsImlhdCI6MTU0MTk1ODYxNCwiZXhwIjoxODU3MzE4NjE0fQ.PP51uQ6Z9KDCbOqkZm7WmdSMpOUq24w9L50QtgnFgMM"
     },
     "coffee":{
         "entity":"switch.coffee_switch"
     },
+    "alarm":{
+        "switch_off_light":false,
+        "switch_off_radio":false
+    },
     "light":{
-        "entity":"light.tradfri_bulb_e14_ws_opal_400lm"
+        "entity":"light.tradfri_bulb_e14_ws_opal_400lm",
+        "delay":"150"
     }
 }
