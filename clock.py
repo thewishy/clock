@@ -75,6 +75,9 @@ if (cfg['core']['coffee']):
   coffee_process = Process(target=action_coffee.coffee, args=(coffee_queue,))
   coffee_process.daemon = True
   coffee_process.start()
+  print "****************************************************************************************************************************************"
+  print "*** Coffee switch is ARMED. If you're reading this, perhaps you're testing? If so, did you switch the coffeee machine off manually?? ***"
+  print "****************************************************************************************************************************************"
   
 #Setup Distance Monitor process
 distance_queue = Queue()
