@@ -71,9 +71,9 @@ def sonos(queue, buzzer_queue, heating_queue):
         try:
           buzzer_queue.put("alarm_stop")
           # Leave any speaker group
-          make_rest_call('http://192.168.1.114:5005/bedroom/leave')
+          make_rest_call('http://192.168.1.18:5005/bedroom/leave')
           # Pause
-          make_rest_call('http://192.168.1.114:5005/bedroom/sleep/5')
+          make_rest_call('http://192.168.1.18:5005/bedroom/pause')
 
         except:
           print "Well, that went wrong... But tis only a stop"

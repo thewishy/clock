@@ -162,7 +162,12 @@ while(True):
           snooze_until = None
           warned = "No"
           # Switch Sonos to Radio mode
-          sonos_queue.put("Radio")
+          if (cfg['alarm']['switch_off_radio']):
+            sonos_queue.put("Stop")
+          else:
+            sonos_queue.put("Radio")
+          if (cfg['alarm']['switch_off_light']):
+            light_queue.put("Off-Delay")
           coffee_queue.put("Make")
         elif (state=="Snooze" or state=="Pre-Alarm" or state=="Pre-Pre-Alarm"):
           print "Clearing Alarm"
@@ -171,6 +176,10 @@ while(True):
           snooze_until = None   
           warned = "No"
           coffee_queue.put("Make")
+          if (cfg['alarm']['switch_off_radio']):
+            sonos_queue.put("Stop")
+          if (cfg['alarm']['switch_off_light']):
+            light_queue.put("Off-Delay")
         else:
           print "Hmm, that doesn't really mean anything to me"
       elif (distance_action == "Triggered"):
