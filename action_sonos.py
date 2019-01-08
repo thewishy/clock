@@ -21,7 +21,7 @@ def make_rest_call(URL):
 
 def check_playing():
   print "Checking"
-  r = requests.get('http://192.168.1.114:5005/bedroom/state')
+  r = requests.get('http://192.168.1.18:5005/bedroom/state')
   print "Result", r.json()
   if (r.status_code == 200 and r.json()['playbackState'] == "PLAYING"):
     print "SONOS Check Success"
