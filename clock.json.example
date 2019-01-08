@@ -12,7 +12,7 @@
         "id":"abc123@group.calendar.google.com"
     },
     "sonos":{
-        "address":"http://192.168.x.x:5005",
+        "address":"http://192.168.x.x:5005/",
         "speaker":"bedroom"
     },
     "distance":{
