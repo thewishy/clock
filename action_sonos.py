@@ -30,7 +30,7 @@ def check_playing():
     raise ConnectionError("Received bad response", r.status_code, "JSON Message", r.json())
 
 def calc_volume(heatingstate, windowstate):
-  if (datetime.datetime.now().hour >= 21 or datetime.datetime.now().hour < 6):
+  if (datetime.datetime.now().hour >= 21 or datetime.datetime.now().hour < 5):
     # Late night, quiet as possible
     base = 4
   else:
