@@ -60,7 +60,7 @@ def sonos(queue, buzzer_queue, heating_queue):
           # Switch on Radio 4
           make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/favorite/BBC Radio 4')
           # Set sleep timer (In seconds)
-          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/sleep/5400')
+          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/sleep/3600')
           # Unmute
           make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/unmute')
 
