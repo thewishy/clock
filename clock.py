@@ -26,6 +26,8 @@ from lib import display_text_seconds
 
 ### INIT WORK ###
 
+process_check = time.time()+60
+
 if (cfg['core']['mux']):
   #Setup I2C Multiplexer
   #I2C mux was added when I had problems with I2C comms on the 1.2" Adafruit 7 Segment
@@ -40,6 +42,7 @@ if (cfg['core']['lux']):
   lux_process = Process(target=sensor_lux.check_brightness, args=(lux_queue,))
   lux_process.daemon = True
   lux_process.start()
+  print "-> Lux PID", lux_process.pid
 brightness = 1
 
 #Setup NTP Monitor process
@@ -47,6 +50,7 @@ ntp_queue = Queue()
 ntp_process = Process(target=sensor_ntp.check_ntp, args=(ntp_queue,))
 ntp_process.daemon = True
 ntp_process.start()
+print "-> NTP PID", ntp_process.pid
 ntp_bad = 1
 
 #Setup Google Cal process
@@ -55,12 +59,14 @@ gcal_process = Process(target=input_gcal.gcal, args=(gcal_queue,))
 gcal_process.daemon = True
 gcal_process.start()
 next_alarm = None
+print "-> gcal PID", gcal_process.pid
 
 # Setup Buzzer
 buzzer_queue = Queue()
 buzzer_process = Process(target=action_buzz.buzzer, args=(buzzer_queue,))
 buzzer_process.daemon = True
 buzzer_process.start()
+print "-> buzzer PID", buzzer_process.pid
 
 #Setup Light Process
 light_queue = Queue()
@@ -68,6 +74,7 @@ if (cfg['core']['light']):
   light_process = Process(target=action_light.light, args=(light_queue,))
   light_process.daemon = True
   light_process.start()
+  print "-> light PID", light_process.pid
 
 #Setup Light Process
 coffee_queue = Queue()
@@ -75,6 +82,7 @@ if (cfg['core']['coffee']):
   coffee_process = Process(target=action_coffee.coffee, args=(coffee_queue,))
   coffee_process.daemon = True
   coffee_process.start()
+  print "-> Coffee PID", coffee_process.pid
   print "****************************************************************************************************************************************"
   print "*** Coffee switch is ARMED. If you're reading this, perhaps you're testing? If so, did you switch the coffeee machine off manually?? ***"
   print "****************************************************************************************************************************************"
@@ -84,6 +92,7 @@ distance_queue = Queue()
 distance_process = Process(target=sensor_distance.check_distance, args=(distance_queue,buzzer_queue,light_queue))
 distance_process.daemon = True
 distance_process.start()
+print "-> distance PID", distance_process.pid
 
 #Setup heating HTTP Process
 heating_queue = Queue()
@@ -91,12 +100,14 @@ if (cfg['core']['http']):
   heating_process = Process(target=sensor_heating.run, args=(heating_queue,))
   heating_process.daemon = True
   heating_process.start()
+  print "-> heating PID", heating_process.pid
 
 #Setup Sonos Process
 sonos_queue = Queue()
 sonos_process = Process(target=action_sonos.sonos, args=(sonos_queue,buzzer_queue, heating_queue))
 sonos_process.daemon = True
 sonos_process.start()
+print "-> Sonos PID", sonos_process.pid
 
 #Setup Status
 # states [Clear, Pre-Alarm, Alarm, Snooze, No-Alarm]
@@ -318,6 +329,18 @@ while(True):
   except Exception as e:
     print "Error handling LCD"
     print str(e)
+  
+  if (process_check < time.time()):
+    process_check = time.time()+60
+    print "Process Checking..."
+    if (not distance_process.is_alive()):
+      print "Distance process has failed, respawning"
+      distance_process = Process(target=sensor_distance.check_distance, args=(distance_queue,buzzer_queue,light_queue))
+      distance_process.daemon = True
+      distance_process.start()
+      print "-> distance PID", distance_process.pid
+  
+  
   # Wait
   if (state == "Alarm"):
     time.sleep(0.1)
