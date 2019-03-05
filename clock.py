@@ -202,7 +202,7 @@ while(True):
             if (next_alarm is not None):
               delta = int(next_alarm.strftime('%s')) - int(datetime.datetime.now().strftime('%s'))
               print delta
-              if (delta < 3600):
+              if (delta < 1800):
                 print "There is another alarm soon, you must want to abort that"
                 print "Clearing Alarm"
                 state = "Clear"
