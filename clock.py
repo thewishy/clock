@@ -332,14 +332,13 @@ while(True):
   
   if (process_check < time.time()):
     process_check = time.time()+60
-    print "Process Checking..."
     if (not distance_process.is_alive()):
       print "Distance process has failed, respawning"
+      distance_queue = Queue()
       distance_process = Process(target=sensor_distance.check_distance, args=(distance_queue,buzzer_queue,light_queue))
       distance_process.daemon = True
       distance_process.start()
       print "-> distance PID", distance_process.pid
-  
   
   # Wait
   if (state == "Alarm"):
