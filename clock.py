@@ -134,7 +134,7 @@ clock_segment.set_colon(True)
 print "Press CTRL+Z to exit"
 
 #Quick test code
-#coffee_queue.put("Make")
+#sonos_queue.put("Sec_Radio")
 
 ### BEGIN WORK ###
 # Continually update the time on a 4 char, 7-segment display
@@ -180,6 +180,8 @@ while(True):
             sonos_queue.put("Stop")
           else:
             sonos_queue.put("Radio")
+          if (cfg['alarm']['switch_on_sec_radio']):
+            sonos_queue.put("Sec_Radio")
           if (cfg['alarm']['switch_off_light']):
             light_queue.put("Off-Delay")
           coffee_queue.put("Make")
@@ -187,15 +189,35 @@ while(True):
           print "Clearing Alarm"
           state = "Clear"
           next_alarm = None
-          snooze_until = None   
+          snooze_until = None
           warned = "No"
           coffee_queue.put("Make")
           if (cfg['alarm']['switch_off_radio']):
             sonos_queue.put("Stop")
           if (cfg['alarm']['switch_off_light']):
             light_queue.put("Off-Delay")
+          if (cfg['alarm']['switch_on_sec_radio']):
+            sonos_queue.put("Sec_Radio")
         else:
-          print "Hmm, that doesn't really mean anything to me"
+            if (next_alarm is not None):
+              delta = int(next_alarm.strftime('%s')) - int(datetime.datetime.now().strftime('%s'))
+              print delta
+              if (delta < 3600):
+                print "There is another alarm soon, you must want to abort that"
+                print "Clearing Alarm"
+                state = "Clear"
+                next_alarm = None
+                snooze_until = None
+                warned = "No"
+                coffee_queue.put("Make")
+                if (cfg['alarm']['switch_off_radio']):
+                  sonos_queue.put("Stop")
+                if (cfg['alarm']['switch_off_light']):
+                  light_queue.put("Off-Delay")
+                if (cfg['alarm']['switch_on_sec_radio']):
+                  sonos_queue.put("Sec_Radio")
+            else:
+              print "Hmm, that doesn't really mean anything to me. You've not got an alarm for quite some time"
       elif (distance_action == "Triggered"):
         if (state == "Alarm"):
           print "Snooze time"

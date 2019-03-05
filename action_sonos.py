@@ -67,6 +67,23 @@ def sonos(queue, buzzer_queue, heating_queue):
         except:
           print "Well, that went wrong... But tis only a pre-alarm"
 
+      if (action == "Sec_Radio"):
+        try:
+          # Leave any speaker group
+          make_rest_call(cfg['sonos']['address']+cfg['sonos']['sec_speaker']+'/leave')
+          # Set Volume
+          call = cfg['sonos']['address']+cfg['sonos']['sec_speaker']+'/volume/' + calc_volume(heatingstate, windowstate)
+          make_rest_call(call)
+          # Switch on Radio 4
+          make_rest_call(cfg['sonos']['address']+cfg['sonos']['sec_speaker']+'/favorite/BBC Radio 4')
+          # Set sleep timer (In seconds)
+          make_rest_call(cfg['sonos']['address']+cfg['sonos']['sec_speaker']+'/sleep/1800')
+          # Unmute
+          make_rest_call(cfg['sonos']['address']+cfg['sonos']['sec_speaker']+'/unmute')
+
+        except:
+          print "Well, that went wrong... But tis only a pre-alarm"
+          
       if (action == "Stop"):
         try:
           buzzer_queue.put("alarm_stop")
