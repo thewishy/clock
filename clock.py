@@ -120,12 +120,15 @@ clock_segment = SevenSegment.SevenSegment(address=int(cfg['core']['clock_addr'],
 alarm_segment = SevenSegment.SevenSegment(address=int(cfg['core']['alarm_addr'],16))
 
 # Initialize the display. Must be called once before using the display.
-clock_segment.begin()
-alarm_segment.begin()
-
-# Toggle colon
-#segment.set_colon(second % 2)              # Toggle colon at 1Hz
-clock_segment.set_colon(True) 
+try:
+  clock_segment.begin()
+  alarm_segment.begin()
+  # Toggle colon
+  #segment.set_colon(second % 2)              # Toggle colon at 1Hz
+  clock_segment.set_colon(True)
+except Exception as e:
+    print "Error initialising LCD"
+    print str(e)
 
 # Set Left Colon 
 #clock_segment.set_left_colon(False)
