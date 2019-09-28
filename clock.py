@@ -14,12 +14,14 @@ import mux
 import sensor_lux
 import sensor_ntp
 import sensor_distance
+import sensor_buttons
 import action_buzz
 import input_gcal
 import sensor_heating
 import action_sonos
 import action_light
 import action_coffee
+import action_button_lights
 from lib import display_text
 from lib import display_text_seconds
 
@@ -88,12 +90,26 @@ if (cfg['core']['coffee']):
   print "****************************************************************************************************************************************"
   
 #Setup Distance Monitor process
-distance_queue = Queue()
-distance_process = Process(target=sensor_distance.check_distance, args=(distance_queue,buzzer_queue,light_queue))
-distance_process.daemon = True
-distance_process.start()
-print "-> distance PID", distance_process.pid
+if (cfg['core']['interaction_distance']):
+  interaction_queue = Queue()
+  distance_process = Process(target=sensor_distance.check_distance, args=(interaction_queue,buzzer_queue,light_queue))
+  distance_process.daemon = True
+  distance_process.start()
+  print "-> distance PID", distance_process.pid
 
+if (cfg['core']['interaction_buttons']):
+  interaction_queue = Queue()
+  button_process = Process(target=sensor_buttons.check_buttons, args=(interaction_queue,buzzer_queue,light_queue))
+  button_process.daemon = True
+  button_process.start()
+  print "-> button sensor PID", button_process.pid
+
+  button_light_queue = Queue()
+  button_light_process = Process(target=action_button_lights.set_buttons, args=(button_light_queue,))
+  button_light_process.daemon = True
+  button_light_process.start()
+  print "-> button light PID", button_process.pid
+  
 #Setup heating HTTP Process
 heating_queue = Queue()
 if (cfg['core']['http']):
@@ -125,10 +141,11 @@ try:
   alarm_segment.begin()
   # Toggle colon
   #segment.set_colon(second % 2)              # Toggle colon at 1Hz
-  clock_segment.set_colon(True)
+  clock_segment.set_colon(True) 
 except Exception as e:
     print "Error initialising LCD"
     print str(e)
+
 
 # Set Left Colon 
 #clock_segment.set_left_colon(False)
@@ -138,9 +155,9 @@ print "Press CTRL+Z to exit"
 
 #Quick test code
 #sonos_queue.put("Sec_Radio")
+#button_light_queue.put("on")
 
 ### BEGIN WORK ###
-# Continually update the time on a 4 char, 7-segment display
 while(True):
   
   while (not lux_queue.empty()):
@@ -161,14 +178,8 @@ while(True):
     else:
       print "Alarm is in the past, skipping"
 
-  #while (not state_recieve.empty()):
-  #  print "Main process setting state"
-  #  state=state_recieve.get()
-  #  print state
-
-  while (not distance_queue.empty()):
-      print "Got distance output"
-      distance_action=distance_queue.get()
+  while (not interaction_queue.empty()):
+      distance_action=interaction_queue.get()
       print distance_action
       if (distance_action == "Double"):
         if (state == "Alarm"):
@@ -187,40 +198,48 @@ while(True):
             sonos_queue.put("Sec_Radio")
           if (cfg['alarm']['switch_off_light']):
             light_queue.put("Off-Delay")
-          coffee_queue.put("Make")
+          if (cfg['core']['interaction_buttons']):
+            button_light_queue.put("off")
+          if (cfg['core']['coffee']):
+            coffee_queue.put("Make")
         elif (state=="Snooze" or state=="Pre-Alarm" or state=="Pre-Pre-Alarm"):
           print "Clearing Alarm"
           state = "Clear"
           next_alarm = None
           snooze_until = None
           warned = "No"
-          coffee_queue.put("Make")
+          if (cfg['core']['coffee']):
+            coffee_queue.put("Make")
           if (cfg['alarm']['switch_off_radio']):
             sonos_queue.put("Stop")
           if (cfg['alarm']['switch_off_light']):
             light_queue.put("Off-Delay")
           if (cfg['alarm']['switch_on_sec_radio']):
             sonos_queue.put("Sec_Radio")
+          if (cfg['core']['interaction_buttons']):
+            button_light_queue.put("off")
         else:
-            if (next_alarm is not None):
-              delta = int(next_alarm.strftime('%s')) - int(datetime.datetime.now().strftime('%s'))
-              print delta
-              if (delta < 1800):
-                print "There is another alarm soon, you must want to abort that"
-                print "Clearing Alarm"
-                state = "Clear"
-                next_alarm = None
-                snooze_until = None
-                warned = "No"
+            if (next_alarm is not None and int(next_alarm.strftime('%s')) - int(datetime.datetime.now().strftime('%s')) < 1800):
+              print "There is another alarm soon, you must want to abort that"
+              state = "Clear"
+              next_alarm = None
+              snooze_until = None
+              warned = "No"
+              if (cfg['core']['coffee']):
                 coffee_queue.put("Make")
-                if (cfg['alarm']['switch_off_radio']):
-                  sonos_queue.put("Stop")
-                if (cfg['alarm']['switch_off_light']):
-                  light_queue.put("Off-Delay")
+              if (cfg['alarm']['switch_off_radio']):
+                sonos_queue.put("Stop")
+              if (cfg['alarm']['switch_off_light']):
+                light_queue.put("Off-Delay")
+              if (cfg['alarm']['switch_on_sec_radio']):
+                sonos_queue.put("Sec_Radio")
+            else:
+              if (datetime.datetime.now().hour >= 5 or datetime.datetime.now().hour < 11):
+                print "No upcoming alarm, performing secondary functions"
+                if (cfg['core']['coffee']):
+                  coffee_queue.put("Make")
                 if (cfg['alarm']['switch_on_sec_radio']):
                   sonos_queue.put("Sec_Radio")
-            else:
-              print "Hmm, that doesn't really mean anything to me. You've not got an alarm for quite some time"
       elif (distance_action == "Triggered"):
         if (state == "Alarm"):
           print "Snooze time"
@@ -228,11 +247,11 @@ while(True):
           state = "Snooze"
           warned = "No"
           snooze_until = datetime.datetime.now() + datetime.timedelta(minutes=5)
-          print "Snoozing until: ", snooze_until       
+          print "Snoozing until: ", snooze_until
         elif (state=="Snooze"):
           snooze_until = snooze_until + datetime.timedelta(minutes=5)
           warned = "No"
-          print "More Snoozing until: ", snooze_until              
+          print "More Snoozing until: ", snooze_until
         elif (state=="Pre-Alarm"):
          state = "Snooze"
          snooze_until = next_alarm + datetime.timedelta(minutes=5)
@@ -287,7 +306,6 @@ while(True):
        if (warned == "No" and state != "Snooze"):
         buzzer_queue.put("beep_once")
         warned = "Yes"
-    # Should be 599 for production
     elif (delta <= 299):
       if (state != "Pre-Alarm" and state != "Snooze"):
         print "Pre-Alarm - Setting state"
@@ -299,6 +317,9 @@ while(True):
         print "Pre-Pre-Alarm - Setting State"
         state = "Pre-Pre-Alarm"
         buzzer_queue.put("beep_once")
+        if (cfg['core']['interaction_buttons']):
+          button_light_queue.put("on")
+        
     # Over a day for the next alarm?
     elif (delta >= 86400):
       if (state != "No-Alarm"):
@@ -357,14 +378,22 @@ while(True):
   
   if (process_check < time.time()):
     process_check = time.time()+60
-    if (not distance_process.is_alive()):
+    if (cfg['core']['interaction_distance'] and not distance_process.is_alive()):
       print "Distance process has failed, respawning"
-      distance_queue = Queue()
-      distance_process = Process(target=sensor_distance.check_distance, args=(distance_queue,buzzer_queue,light_queue))
+      interaction_queue = Queue()
+      distance_process = Process(target=sensor_distance.check_distance, args=(interaction_queue,buzzer_queue,light_queue))
       distance_process.daemon = True
       distance_process.start()
       print "-> distance PID", distance_process.pid
-  
+
+    if (cfg['core']['interaction_buttons'] and not button_process.is_alive()):
+      print "Buttons process has failed, respawning"
+      interaction_queue = Queue()
+      button_process = Process(target=sensor_buttons.check_buttons, args=(interaction_queue,buzzer_queue,light_queue))
+      button_process.daemon = True
+      button_process.start()
+      print "-> buttons PID", button_process.pid
+      
   # Wait
   if (state == "Alarm"):
     time.sleep(0.1)
