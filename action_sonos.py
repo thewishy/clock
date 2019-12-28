@@ -42,7 +42,7 @@ def calc_volume(heatingstate, windowstate):
     base += 3
   return str(base)
     
-def sonos(queue, buzzer_queue, heating_queue):
+def sonos(queue, buzzer_queue):
   heatingstate = 0
   windowstate = 0
   while (True):
@@ -118,18 +118,19 @@ def sonos(queue, buzzer_queue, heating_queue):
         except:
           print "Well, that went wrong... ACTIVATING THE CLAXON!"
           buzzer_queue.put("alarm_start")
-    while (not heating_queue.empty()):
-      try:
-        newstate = heating_queue.get()
-        print "Got info from automation system: ", newstate
-        if (newstate<2):
-          heatingstate = newstate
-        else:
-          newstate = newstate - 2
-          print "Window State: ", newstate
-          windowstate=newstate
-        call = cfg['sonos']['address']+cfg['sonos']['speaker']+'/volume/' + calc_volume(heatingstate, windowstate)
-        make_rest_call(call)
-      except:
-        print "Heating queue processing failed"
+      if (action.startswith("enviro/")):
+        try:
+          print "Enviro state message"
+          newstate = int(action.replace("enviro/",""))
+          print "Got info from automation system: ", newstate
+          if (newstate<2):
+            heatingstate = newstate
+          else:
+            newstate = newstate - 2
+            print "Window State: ", newstate
+            windowstate=newstate
+          call = cfg['sonos']['address']+cfg['sonos']['speaker']+'/volume/' + calc_volume(heatingstate, windowstate)
+          make_rest_call(call)
+        except Exception as e:
+          print(e)
     time.sleep(0.5)

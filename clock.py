@@ -109,21 +109,20 @@ if (cfg['core']['interaction_buttons']):
   button_light_process.daemon = True
   button_light_process.start()
   print "-> button light PID", button_process.pid
-  
-#Setup HTTP Process
-heating_queue = Queue()
-if (cfg['core']['http']):
-  heating_process = Process(target=sensor_http.run, args=(heating_queue,))
-  heating_process.daemon = True
-  heating_process.start()
-  print "-> HTTP PID", heating_process.pid
 
 #Setup Sonos Process
 sonos_queue = Queue()
-sonos_process = Process(target=action_sonos.sonos, args=(sonos_queue,buzzer_queue, heating_queue))
+sonos_process = Process(target=action_sonos.sonos, args=(sonos_queue,buzzer_queue))
 sonos_process.daemon = True
 sonos_process.start()
 print "-> Sonos PID", sonos_process.pid
+
+#Setup HTTP Process
+if (cfg['core']['http']):
+  heating_process = Process(target=sensor_http.run, args=(sonos_queue,light_queue))
+  heating_process.daemon = True
+  heating_process.start()
+  print "-> HTTP PID", heating_process.pid
 
 #Setup Status
 # states [Clear, Pre-Alarm, Alarm, Snooze, No-Alarm]
