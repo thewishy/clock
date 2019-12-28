@@ -8,15 +8,15 @@ from time import sleep     # Import the sleep function from the time module
 from cfgmgr import get_config
 cfg = get_config()
 
-def green_button_callback(channel):
-  print("Green button was pushed!")
-  buzzer_queue.put("beep_twice")
-  queue.put("Double")
-
 def yellow_button_callback(channel):
   print("Yellow button was pushed!")
   buzzer_queue.put("beep_once")
   queue.put("Triggered")
+
+def green_button_callback(channel):
+  print("Green button was pushed!")
+  buzzer_queue.put("beep_twice")
+  queue.put("Double")
   
 def white_button_callback(channel):
   print("White button was pushed!")

@@ -17,7 +17,7 @@ import sensor_distance
 import sensor_buttons
 import action_buzz
 import input_gcal
-import sensor_heating
+import sensor_http
 import action_sonos
 import action_light
 import action_coffee
@@ -110,13 +110,13 @@ if (cfg['core']['interaction_buttons']):
   button_light_process.start()
   print "-> button light PID", button_process.pid
   
-#Setup heating HTTP Process
+#Setup HTTP Process
 heating_queue = Queue()
 if (cfg['core']['http']):
-  heating_process = Process(target=sensor_heating.run, args=(heating_queue,))
+  heating_process = Process(target=sensor_http.run, args=(heating_queue,))
   heating_process.daemon = True
   heating_process.start()
-  print "-> heating PID", heating_process.pid
+  print "-> HTTP PID", heating_process.pid
 
 #Setup Sonos Process
 sonos_queue = Queue()

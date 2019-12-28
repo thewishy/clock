@@ -32,9 +32,9 @@ class S(BaseHTTPRequestHandler):
           self.server.data_queue.put(3);
         if (self.path == "/windowclosed"):
           print "Window Closed"
-          self.server.data_queue.put(2);          
+          self.server.data_queue.put(2);
         self._set_headers()
-        self.wfile.write("Processed\n")
+        self.wfile.write("Request Processed\n")
         
 def run(out_queue,server_class=QueuingHTTPServer, handler_class=S, port=8000):
     server_address = ('', port)
