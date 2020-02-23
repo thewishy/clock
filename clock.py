@@ -78,7 +78,7 @@ if (cfg['core']['light']):
   light_process.start()
   print "-> light PID", light_process.pid
 
-#Setup Light Process
+#Setup Coffee Process
 coffee_queue = Queue()
 if (cfg['core']['coffee']):
   coffee_process = Process(target=action_coffee.coffee, args=(coffee_queue,))
@@ -119,7 +119,7 @@ print "-> Sonos PID", sonos_process.pid
 
 #Setup HTTP Process
 if (cfg['core']['http']):
-  heating_process = Process(target=sensor_http.run, args=(sonos_queue,light_queue))
+  heating_process = Process(target=sensor_http.run, args=(sonos_queue,light_queue,lux_queue))
   heating_process.daemon = True
   heating_process.start()
   print "-> HTTP PID", heating_process.pid
