@@ -21,7 +21,10 @@ def coffee(queue):
       print "Coffee got action", action
       if (action == "Make"):
         try:
-          coffee_on()
+          if (datetime.datetime.now().hour >= 4 and datetime.datetime.now().hour < 11):
+            coffee_on()
+          else:
+            print "Coffee request out of time range"
         except:
           print "Well, coffee went wrong!"
           
