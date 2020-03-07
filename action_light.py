@@ -6,26 +6,31 @@ from multiprocessing import Process, Queue
 
 from cfgmgr import get_config
 cfg = get_config()
+status_queue = None
 
 
 
 def light_wake():
+  status_queue.put(1)
   headers = { 'Authorization': cfg['homeassistant']['token'] }
   content = {"entity_id":cfg['light']['entity'],"transition":"300","brightness":"256","kelvin":"4000"}
   requests.post(cfg['homeassistant']['address']+"/api/services/light/turn_on", json=content, headers=headers)
 
 def light_low():
+  status_queue.put(1)
   headers = { 'Authorization': cfg['homeassistant']['token'] }
   content = {"entity_id":cfg['light']['entity'],"transition":"5","brightness":"128","kelvin":"2700"}
   requests.post(cfg['homeassistant']['address']+"/api/services/light/turn_on", json=content, headers=headers)
   
 def light_off():
+  status_queue.put(0)
   headers = { 'Authorization': cfg['homeassistant']['token'] }
 
   content = {"entity_id":cfg['light']['entity']}
   requests.post(cfg['homeassistant']['address']+"/api/services/light/turn_off", json=content, headers=headers)
 
 def light_on():
+  status_queue.put(1)
   headers = { 'Authorization': cfg['homeassistant']['token'] }
   if (datetime.datetime.now().hour >= 17 or datetime.datetime.now().hour < 6):
     #Night setting
@@ -45,7 +50,9 @@ def check_state():
     return True
   
 
-def light(queue):
+def light(queue, st_queue):
+  global status_queue 
+  status_queue = st_queue
   wait_until = None
   while (True):
     if (wait_until is not None and wait_until < time.time()):

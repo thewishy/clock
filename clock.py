@@ -40,12 +40,14 @@ if (cfg['core']['mux']):
 
 #Setup Lux Monitor process
 lux_queue = Queue()
+lux = 0
 if (cfg['core']['lux']):
   lux_process = Process(target=sensor_lux.check_brightness, args=(lux_queue,))
   lux_process.daemon = True
   lux_process.start()
   print "-> Lux PID", lux_process.pid
 brightness = 1
+light_on = 0
 
 #Setup NTP Monitor process
 ntp_queue = Queue()
@@ -72,8 +74,9 @@ print "-> buzzer PID", buzzer_process.pid
 
 #Setup Light Process
 light_queue = Queue()
+light_status_queue =  Queue()
 if (cfg['core']['light']):
-  light_process = Process(target=action_light.light, args=(light_queue,))
+  light_process = Process(target=action_light.light, args=(light_queue,light_status_queue))
   light_process.daemon = True
   light_process.start()
   print "-> light PID", light_process.pid
@@ -160,7 +163,15 @@ print "Press CTRL+Z to exit"
 while(True):
   
   while (not lux_queue.empty()):
-    brightness=lux_queue.get()
+    lux=lux_queue.get()
+    brightness = min(lux+light_on*2,15)
+    print "Brightness", brightness
+    
+  while (not light_status_queue.empty()):
+    light_on=light_status_queue.get()
+    print "Light: ", light_on
+    brightness = min(lux+light_on*2,15)
+    print "Brightness", brightness
   
   while (not ntp_queue.empty()):
     ntp_bad=ntp_queue.get()
