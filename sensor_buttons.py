@@ -9,18 +9,30 @@ from cfgmgr import get_config
 cfg = get_config()
 
 def yellow_button_callback(channel):
-  print("Yellow button was pushed!")
-  buzzer_queue.put("beep_once")
-  queue.put("Triggered")
+  time.sleep(0.1)
+  if (GPIO.input(int(cfg['buttons']['yellow_button'])) != GPIO.HIGH):
+    print("Noise Detected Yellow Channel")
+  else:
+    print("Yellow button was pushed!")
+    buzzer_queue.put("beep_once")
+    queue.put("Triggered")
 
 def green_button_callback(channel):
-  print("Green button was pushed!")
-  buzzer_queue.put("beep_twice")
-  queue.put("Double")
+  time.sleep(0.1)
+  if (GPIO.input(int(cfg['buttons']['green_button'])) != GPIO.HIGH):
+    print("Noise Detected Green Channel")
+  else:
+    print("Green button was pushed!")
+    buzzer_queue.put("beep_twice")
+    queue.put("Double")
   
 def white_button_callback(channel):
-  print("White button was pushed!")
-  light_queue.put("Toggle")
+  time.sleep(0.1)
+  if (GPIO.input(int(cfg['buttons']['white_button'])) != GPIO.HIGH):
+    print("Noise Detected White Channel")
+  else:
+    print("White button was pushed!")
+    light_queue.put("Toggle")
   
 def check_buttons(local_queue, local_buzzer_queue, local_light_queue):
   global queue
