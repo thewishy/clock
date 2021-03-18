@@ -156,7 +156,7 @@ except Exception as e:
 print "Press CTRL+Z to exit"
 
 #Quick test code
-#sonos_queue.put("Sec_Radio")
+#sonos_queue.put("Radio")
 #button_light_queue.put("on")
 
 ### BEGIN WORK ###
@@ -165,13 +165,13 @@ while(True):
   while (not lux_queue.empty()):
     lux=lux_queue.get()
     brightness = min(lux+light_on*2,15)
-    print "Brightness", brightness
+    #print "Brightness", brightness
     
   while (not light_status_queue.empty()):
     light_on=light_status_queue.get()
-    print "Light: ", light_on
+    #print "Light: ", light_on
     brightness = min(lux+light_on*2,15)
-    print "Brightness", brightness
+    #print "Brightness", brightness
   
   while (not ntp_queue.empty()):
     ntp_bad=ntp_queue.get()

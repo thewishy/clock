@@ -27,6 +27,8 @@ def green_button_callback(channel):
     queue.put("Double")
   
 def white_button_callback(channel):
+  print(channel)
+  print(type(channel))
   time.sleep(0.1)
   if (GPIO.input(int(cfg['buttons']['white_button'])) != GPIO.HIGH):
     print("Noise Detected White Channel")

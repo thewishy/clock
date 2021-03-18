@@ -30,7 +30,7 @@ def check_change(queue, oldvalue, newvalue):
     #print "Values differ!"
     queue.put(newvalue)
     if (cfg['lux']['notify_other']):
-      print "Brightness: Making REST Call"
+      #print "Brightness: Making REST Call"
       try:
         r = requests.get(cfg['lux']['address']+str(newvalue))
       except Exception as err:

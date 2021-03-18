@@ -20,31 +20,15 @@ def make_rest_call(URL):
     raise ConnectionError("Received bad response", r.status_code, "JSON Message", r.json())
 
 def check_playing():
-  print "Checking"
-  r = requests.get(cfg['sonos']['address']+cfg['sonos']['speaker']+'/state')
-  print "Result", r.json()
-  if (r.status_code == 200 and r.json()['playbackState'] == "PLAYING"):
+  headers = { 'Authorization': cfg['homeassistant']['token'] }
+  r = requests.get(cfg['homeassistant']['address']+'/api/states/media_player.bedroom', headers=headers)
+  if (r.status_code == 200 and r.json()['state'] == "playing"):
     print "SONOS Check Success"
   else:
     print "SONOS Api Call Fail", URL, r.status_code, r.json()
     raise ConnectionError("Received bad response", r.status_code, "JSON Message", r.json())
-
-def calc_volume(heatingstate, windowstate):
-  if (datetime.datetime.now().hour >= 21 or datetime.datetime.now().hour < 5):
-    # Late night, quiet as possible
-    base = 4
-  else:
-    # Rest of the day, a little louder
-    base = 7
-  if (heatingstate==1):
-    base += 5
-  elif (windowstate==1):
-    base += 3
-  return str(base)
     
 def sonos(queue, buzzer_queue):
-  heatingstate = 0
-  windowstate = 0
   while (True):
     while (not queue.empty()):
       action=queue.get()
@@ -52,63 +36,37 @@ def sonos(queue, buzzer_queue):
       if (action == "Pre-Alarm" or action == "Radio"):
         try:
           buzzer_queue.put("alarm_stop")
-          # Leave any speaker group
-          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/leave')
-          # Set Volume
-          call = cfg['sonos']['address']+cfg['sonos']['speaker']+'/volume/' + calc_volume(heatingstate, windowstate)
-          make_rest_call(call)
-          # Switch on Radio 4
-          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/favorite/BBC Radio 4')
-          # Set sleep timer (In seconds)
-          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/sleep/3600')
-          # Unmute
-          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/unmute')
-
+          headers = { 'Authorization': cfg['homeassistant']['token'] }
+          content = {}
+          requests.post(cfg['homeassistant']['address']+"/api/services/script/bedroom_radio_4_for_1hr", json=content, headers=headers)
         except:
           print "Well, that went wrong... But tis only a pre-alarm"
 
       if (action == "Sec_Radio"):
         try:
-          # Leave any speaker group
-          make_rest_call(cfg['sonos']['address']+cfg['sonos']['sec_speaker']+'/leave')
-          # Set Volume
-          call = cfg['sonos']['address']+cfg['sonos']['sec_speaker']+'/volume/' + calc_volume(heatingstate, windowstate)
-          make_rest_call(call)
-          # Switch on Radio 4
-          make_rest_call(cfg['sonos']['address']+cfg['sonos']['sec_speaker']+'/favorite/BBC Radio 4')
-          # Set sleep timer (In seconds)
-          make_rest_call(cfg['sonos']['address']+cfg['sonos']['sec_speaker']+'/sleep/3600')
-          # Unmute
-          make_rest_call(cfg['sonos']['address']+cfg['sonos']['sec_speaker']+'/unmute')
-
+          headers = { 'Authorization': cfg['homeassistant']['token'] }
+          content = {}
+          requests.post(cfg['homeassistant']['address']+"/api/services/script/dressing_room_radio_4_for_1hr", json=content, headers=headers)
         except:
           print "Well, that went wrong... But tis only a pre-alarm"
           
       if (action == "Stop"):
         try:
+          print "Alarm / Media Stopping"
           buzzer_queue.put("alarm_stop")
-          # Leave any speaker group
-          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/leave')
-          # Pause
-          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/pause')
+          headers = { 'Authorization': cfg['homeassistant']['token'] }
+          content = {"entity_id:media_player.bedroom"}
+          requests.post(cfg['homeassistant']['address']+"/api/services/media_player/media_stop", json=content, headers=headers)
 
         except:
           print "Well, that went wrong... But tis only a stop"
           
       if (action == "Alarm"):
         try:
-          # Leave any speaker group
-          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/leave')
-          # Set Volume
-          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/volume/20')
-          # Switch on Radio 4
-          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/favorite/Sailing By')
-          # Set sleep timer (In seconds)
-          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/sleep/3600')
-          # Unmute
-          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/unmute')
-          # Repeat
-          make_rest_call(cfg['sonos']['address']+cfg['sonos']['speaker']+'/repeat/on')         
+          headers = { 'Authorization': cfg['homeassistant']['token'] }
+          content = {}
+          requests.post(cfg['homeassistant']['address']+"/api/services/script/bedroom_radio_alarm", json=content, headers=headers)       
+          # Check that the Sonos actually activated
           for x in range(0, 15):
             if (not queue.empty()):
               break
@@ -118,19 +76,4 @@ def sonos(queue, buzzer_queue):
         except:
           print "Well, that went wrong... ACTIVATING THE CLAXON!"
           buzzer_queue.put("alarm_start")
-      if (action.startswith("enviro/")):
-        try:
-          print "Enviro state message"
-          newstate = int(action.replace("enviro/",""))
-          print "Got info from automation system: ", newstate
-          if (newstate<2):
-            heatingstate = newstate
-          else:
-            newstate = newstate - 2
-            print "Window State: ", newstate
-            windowstate=newstate
-          call = cfg['sonos']['address']+cfg['sonos']['speaker']+'/volume/' + calc_volume(heatingstate, windowstate)
-          make_rest_call(call)
-        except Exception as e:
-          print(e)
     time.sleep(0.5)

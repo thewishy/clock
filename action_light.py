@@ -25,7 +25,6 @@ def light_low():
 def light_off():
   status_queue.put(0)
   headers = { 'Authorization': cfg['homeassistant']['token'] }
-
   content = {"entity_id":cfg['light']['entity']}
   requests.post(cfg['homeassistant']['address']+"/api/services/light/turn_off", json=content, headers=headers)
 
