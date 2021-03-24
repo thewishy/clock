@@ -92,6 +92,13 @@ if (cfg['core']['coffee']):
   print "*** Coffee switch is ARMED. If you're reading this, perhaps you're testing? If so, did you switch the coffeee machine off manually?? ***"
   print "****************************************************************************************************************************************"
   
+#Setup Sonos Process
+sonos_queue = Queue()
+sonos_process = Process(target=action_sonos.sonos, args=(sonos_queue,buzzer_queue))
+sonos_process.daemon = True
+sonos_process.start()
+print "-> Sonos PID", sonos_process.pid
+
 #Setup Distance Monitor process
 if (cfg['core']['interaction_distance']):
   interaction_queue = Queue()
@@ -100,9 +107,10 @@ if (cfg['core']['interaction_distance']):
   distance_process.start()
   print "-> distance PID", distance_process.pid
 
+#Setup Button Monitor process
 if (cfg['core']['interaction_buttons']):
   interaction_queue = Queue()
-  button_process = Process(target=sensor_buttons.check_buttons, args=(interaction_queue,buzzer_queue,light_queue))
+  button_process = Process(target=sensor_buttons.check_buttons, args=(interaction_queue,buzzer_queue,light_queue,sonos_queue))
   button_process.daemon = True
   button_process.start()
   print "-> button sensor PID", button_process.pid
@@ -112,13 +120,6 @@ if (cfg['core']['interaction_buttons']):
   button_light_process.daemon = True
   button_light_process.start()
   print "-> button light PID", button_process.pid
-
-#Setup Sonos Process
-sonos_queue = Queue()
-sonos_process = Process(target=action_sonos.sonos, args=(sonos_queue,buzzer_queue))
-sonos_process.daemon = True
-sonos_process.start()
-print "-> Sonos PID", sonos_process.pid
 
 #Setup HTTP Process
 if (cfg['core']['http']):

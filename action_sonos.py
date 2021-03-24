@@ -40,7 +40,7 @@ def sonos(queue, buzzer_queue):
           content = {}
           requests.post(cfg['homeassistant']['address']+"/api/services/script/bedroom_radio_4_for_1hr", json=content, headers=headers)
         except:
-          print "Well, that went wrong... But tis only a pre-alarm"
+          print "Well, that went wrong... But tis only a pre-alarm / radio request"
 
       if (action == "Sec_Radio"):
         try:
@@ -48,8 +48,16 @@ def sonos(queue, buzzer_queue):
           content = {}
           requests.post(cfg['homeassistant']['address']+"/api/services/script/dressing_room_radio_4_for_1hr", json=content, headers=headers)
         except:
-          print "Well, that went wrong... But tis only a pre-alarm"
-          
+          print "Well, that went wrong... But tis only a secondary"
+
+      if (action == "Say_Time"):
+        try:
+          headers = { 'Authorization': cfg['homeassistant']['token'] }
+          content = {}
+          requests.post(cfg['homeassistant']['address']+"/api/services/script/bedroom_say_time", json=content, headers=headers)
+        except:
+          print "Well, that went wrong... But tis only a time request"
+
       if (action == "Stop"):
         try:
           print "Alarm / Media Stopping"
@@ -57,7 +65,6 @@ def sonos(queue, buzzer_queue):
           headers = { 'Authorization': cfg['homeassistant']['token'] }
           content = {"entity_id:media_player.bedroom"}
           requests.post(cfg['homeassistant']['address']+"/api/services/media_player/media_stop", json=content, headers=headers)
-
         except:
           print "Well, that went wrong... But tis only a stop"
           

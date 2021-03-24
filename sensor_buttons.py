@@ -27,22 +27,30 @@ def green_button_callback(channel):
     queue.put("Double")
   
 def white_button_callback(channel):
-  print(channel)
-  print(type(channel))
   time.sleep(0.1)
   if (GPIO.input(int(cfg['buttons']['white_button'])) != GPIO.HIGH):
     print("Noise Detected White Channel")
   else:
     print("White button was pushed!")
     light_queue.put("Toggle")
-  
-def check_buttons(local_queue, local_buzzer_queue, local_light_queue):
+
+def blue_button_callback(channel):
+  time.sleep(0.1)
+  if (GPIO.input(int(cfg['buttons']['blue_button'])) != GPIO.HIGH):
+    print("Noise Detected Blue Channel")
+  else:
+    print("Blue button was pushed!")
+    sonos_queue.put("Say_Time")
+
+def check_buttons(local_queue, local_buzzer_queue, local_light_queue, local_sonos_queue):
   global queue
   queue = local_queue
   global buzzer_queue
   buzzer_queue = local_buzzer_queue
   global light_queue
   light_queue = local_light_queue
+  global sonos_queue
+  sonos_queue = local_sonos_queue
   GPIO.setwarnings(False)    # Ignore warning for now
   GPIO.setmode(GPIO.BCM)     # Use physical pin numbering
   
@@ -57,6 +65,9 @@ def check_buttons(local_queue, local_buzzer_queue, local_light_queue):
   # Setup White button
   GPIO.setup(int(cfg['buttons']['white_button']), GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
   GPIO.add_event_detect(int(cfg['buttons']['white_button']),GPIO.RISING,callback=white_button_callback,bouncetime=500) 
-  
+
+  if 'blue_button' in cfg['buttons']:
+    GPIO.setup(int(cfg['buttons']['blue_button']), GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+    GPIO.add_event_detect(int(cfg['buttons']['blue_button']),GPIO.RISING,callback=blue_button_callback,bouncetime=500) 
   while (True):
     time.sleep(100)
