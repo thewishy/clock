@@ -14,25 +14,39 @@ def check_brightness(queue):
     except:
       print "Error polling Lux Sensor"
     #print lux 
-    if lux < 5:
-      #print "Brightness Zero!"
-      brightness = check_change(queue,brightness,0)
-    elif lux <30:
-      brightness = check_change(queue,brightness,4)
-    elif lux > 100:
-      brightness  = check_change(queue,brightness,15)
-    else:
-      brightness = check_change(queue,brightness,7)
+
+    if brightness == 0:
+      if (lux > 10):
+        brightness = eval_brightness(queue,brightness,lux)
+    elif brightness == 4:
+      if (lux > 35 or lux <5):
+        brightness = eval_brightness(queue,brightness,lux)
+    elif brightness == 7:
+      if (lux > 110 or lux < 25):
+        brightness = eval_brightness(queue,brightness,lux)
+    elif brightness == 15:
+      if (lux < 90):
+        brightness = eval_brightness(queue,brightness,lux)
     time.sleep(1)
-    
-def check_change(queue, oldvalue, newvalue):
-  if (oldvalue != newvalue):
-    #print "Values differ!"
-    queue.put(newvalue)
-    if (cfg['lux']['notify_other']):
-      #print "Brightness: Making REST Call"
-      try:
-        r = requests.get(cfg['lux']['address']+str(newvalue))
-      except Exception as err:
-        print("HTTP Error making Lux rest call", err)
-  return newvalue
+
+def eval_brightness(queue, brightness,lux):
+  if lux < 5:
+    #print "Brightness Zero!"
+    brightness = notify_change(queue,0)
+  elif lux <30:
+    brightness = notify_change(queue,4)
+  elif lux > 100:
+    brightness  = notify_change(queue,15)
+  else:
+    brightness = notify_change(queue,7)
+  return brightness
+
+def notify_change(queue, value):
+  queue.put(value)
+  if (cfg['lux']['notify_other']):
+    #print "Brightness: Making REST Call"
+    try:
+      r = requests.get(cfg['lux']['address']+str(value))
+    except Exception as err:
+      print("HTTP Error making Lux rest call", err)
+  return value
