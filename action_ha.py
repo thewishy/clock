@@ -14,25 +14,25 @@ def make_rest_call(URL):
   r = requests.get(URL)
   
   if (r.status_code == 200 and r.json()['status'] == "success"):
-    print "SONOS Api Call Success", URL, r.status_code, r.json()
+    print "Home Assistant Api Call Success", URL, r.status_code, r.json()
   else:
-    print "SONOS Api Call Fail", URL, r.status_code, r.json()
+    print "Home Assistant Api Call Fail", URL, r.status_code, r.json()
     raise ConnectionError("Received bad response", r.status_code, "JSON Message", r.json())
 
 def check_playing():
   headers = { 'Authorization': cfg['homeassistant']['token'] }
   r = requests.get(cfg['homeassistant']['address']+'/api/states/media_player.bedroom', headers=headers)
   if (r.status_code == 200 and r.json()['state'] == "playing"):
-    print "SONOS Check Success"
+    print "Home Assistant Check Success"
   else:
-    print "SONOS Api Call Fail", URL, r.status_code, r.json()
+    print "Home Assistant Api Call Fail", URL, r.status_code, r.json()
     raise ConnectionError("Received bad response", r.status_code, "JSON Message", r.json())
     
-def sonos(queue, buzzer_queue):
+def ha(queue, buzzer_queue):
   while (True):
     while (not queue.empty()):
       action=queue.get()
-      print "Sonos got action", action
+      print "Home Assistant got action", action
       if (action == "Pre-Alarm" or action == "Radio"):
         try:
           buzzer_queue.put("alarm_stop")
@@ -67,7 +67,16 @@ def sonos(queue, buzzer_queue):
           requests.post(cfg['homeassistant']['address']+"/api/services/media_player/media_stop", json=content, headers=headers)
         except:
           print "Well, that went wrong... But tis only a stop"
-          
+
+      if (action == "Wakeup"):
+        try:
+          print "Calling Wakeup Script"
+          headers = { 'Authorization': cfg['homeassistant']['token'] }
+          content = {}
+          requests.post(cfg['homeassistant']['address']+"/api/services/script/"+cfg['wakeup']['script'], json=content, headers=headers)
+        except:
+          print "Well, that went wrong... But tis only a wakeup script"
+
       if (action == "Alarm"):
         try:
           headers = { 'Authorization': cfg['homeassistant']['token'] }

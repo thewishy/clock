@@ -18,9 +18,8 @@ import sensor_buttons
 import action_buzz
 import input_gcal
 import sensor_http
-import action_sonos
+import action_ha
 import action_light
-import action_coffee
 import action_button_lights
 from lib import display_text
 from lib import display_text_seconds
@@ -65,7 +64,7 @@ gcal_process.start()
 next_alarm = None
 print "-> gcal PID", gcal_process.pid
 
-# Setup Buzzer
+#Setup Buzzer
 buzzer_queue = Queue()
 buzzer_process = Process(target=action_buzz.buzzer, args=(buzzer_queue,))
 buzzer_process.daemon = True
@@ -80,24 +79,13 @@ if (cfg['core']['light']):
   light_process.daemon = True
   light_process.start()
   print "-> light PID", light_process.pid
-
-#Setup Coffee Process
-coffee_queue = Queue()
-if (cfg['core']['coffee']):
-  coffee_process = Process(target=action_coffee.coffee, args=(coffee_queue,))
-  coffee_process.daemon = True
-  coffee_process.start()
-  print "-> Coffee PID", coffee_process.pid
-  print "****************************************************************************************************************************************"
-  print "*** Coffee switch is ARMED. If you're reading this, perhaps you're testing? If so, did you switch the coffeee machine off manually?? ***"
-  print "****************************************************************************************************************************************"
   
-#Setup Sonos Process
-sonos_queue = Queue()
-sonos_process = Process(target=action_sonos.sonos, args=(sonos_queue,buzzer_queue))
-sonos_process.daemon = True
-sonos_process.start()
-print "-> Sonos PID", sonos_process.pid
+#Setup Home Assistant Process
+ha_queue = Queue()
+ha_process = Process(target=action_ha.ha, args=(ha_queue,buzzer_queue))
+ha_process.daemon = True
+ha_process.start()
+print "-> Home Assistant PID", ha_process.pid
 
 #Setup Distance Monitor process
 if (cfg['core']['interaction_distance']):
@@ -110,7 +98,7 @@ if (cfg['core']['interaction_distance']):
 #Setup Button Monitor process
 if (cfg['core']['interaction_buttons']):
   interaction_queue = Queue()
-  button_process = Process(target=sensor_buttons.check_buttons, args=(interaction_queue,buzzer_queue,light_queue,sonos_queue))
+  button_process = Process(target=sensor_buttons.check_buttons, args=(interaction_queue,buzzer_queue,light_queue,ha_queue))
   button_process.daemon = True
   button_process.start()
   print "-> button sensor PID", button_process.pid
@@ -123,7 +111,7 @@ if (cfg['core']['interaction_buttons']):
 
 #Setup HTTP Process
 if (cfg['core']['http']):
-  heating_process = Process(target=sensor_http.run, args=(sonos_queue,light_queue,lux_queue))
+  heating_process = Process(target=sensor_http.run, args=(ha_queue,light_queue,lux_queue))
   heating_process.daemon = True
   heating_process.start()
   print "-> HTTP PID", heating_process.pid
@@ -157,7 +145,7 @@ except Exception as e:
 print "Press CTRL+Z to exit"
 
 #Quick test code
-#sonos_queue.put("Radio")
+#ha_queue.put("Radio")
 #button_light_queue.put("on")
 
 ### BEGIN WORK ###
@@ -202,31 +190,29 @@ while(True):
           warned = "No"
           # Switch Sonos to Radio mode
           if (cfg['alarm']['switch_off_radio']):
-            sonos_queue.put("Stop")
+            ha_queue.put("Stop")
           else:
-            sonos_queue.put("Radio")
+            ha_queue.put("Radio")
           if (cfg['alarm']['switch_on_sec_radio']):
-            sonos_queue.put("Sec_Radio")
+            ha_queue.put("Sec_Radio")
           if (cfg['alarm']['switch_off_light']):
             light_queue.put("Off-Delay")
           if (cfg['core']['interaction_buttons']):
             button_light_queue.put("off")
-          if (cfg['core']['coffee']):
-            coffee_queue.put("Make")
+          ha_queue.put("Wakeup")
         elif (state=="Snooze" or state=="Pre-Alarm" or state=="Pre-Pre-Alarm"):
           print "Clearing Alarm"
           state = "Clear"
           next_alarm = None
           snooze_until = None
           warned = "No"
-          if (cfg['core']['coffee']):
-            coffee_queue.put("Make")
+          ha_queue.put("Wakeup")
           if (cfg['alarm']['switch_off_radio']):
-            sonos_queue.put("Stop")
+            ha_queue.put("Stop")
           if (cfg['alarm']['switch_off_light']):
             light_queue.put("Off-Delay")
           if (cfg['alarm']['switch_on_sec_radio']):
-            sonos_queue.put("Sec_Radio")
+            ha_queue.put("Sec_Radio")
           if (cfg['core']['interaction_buttons']):
             button_light_queue.put("off")
         else:
@@ -236,25 +222,23 @@ while(True):
               next_alarm = None
               snooze_until = None
               warned = "No"
-              if (cfg['core']['coffee']):
-                coffee_queue.put("Make")
+              ha_queue.put("Wakeup")
               if (cfg['alarm']['switch_off_radio']):
-                sonos_queue.put("Stop")
+                ha_queue.put("Stop")
               if (cfg['alarm']['switch_off_light']):
                 light_queue.put("Off-Delay")
               if (cfg['alarm']['switch_on_sec_radio']):
-                sonos_queue.put("Sec_Radio")
+                ha_queue.put("Sec_Radio")
             else:
               if (datetime.datetime.now().hour >= 5 or datetime.datetime.now().hour < 11):
                 print "No upcoming alarm, performing secondary functions"
-                if (cfg['core']['coffee']):
-                  coffee_queue.put("Make")
+                ha_queue.put("Wakeup")
                 if (cfg['alarm']['switch_on_sec_radio']):
-                  sonos_queue.put("Sec_Radio")
+                  ha_queue.put("Sec_Radio")
       elif (distance_action == "Triggered"):
         if (state == "Alarm"):
           print "Snooze time"
-          sonos_queue.put("Radio")
+          ha_queue.put("Radio")
           state = "Snooze"
           warned = "No"
           snooze_until = datetime.datetime.now() + datetime.timedelta(minutes=5)
@@ -273,7 +257,7 @@ while(True):
          warned = "No"
         else:
           print "So you want radio?"
-          sonos_queue.put("Radio")
+          ha_queue.put("Radio")
         
     
   
@@ -286,7 +270,7 @@ while(True):
     if (snoozedelta <= 0):
       snooze_until = None
       state = "Alarm"
-      sonos_queue.put("Alarm")
+      ha_queue.put("Alarm")
     elif (snoozedelta <= 60):
       print "SnoozeDelta should warn"
       if (warned == "No"):
@@ -306,12 +290,12 @@ while(True):
       next_alarm = None
       snooze_until = None
       # Switch off Radio
-      sonos_queue.put("Stop")
+      ha_queue.put("Stop")
     elif (delta <= 0):
       if (state != "Alarm" and state != "Snooze"):
         print "Alarm - Setting State"
         state = "Alarm"
-        sonos_queue.put("Alarm")
+        ha_queue.put("Alarm")
     # Beep a minute before alarm
     elif (delta <=60):
        if (warned == "No" and state != "Snooze"):
@@ -321,7 +305,7 @@ while(True):
       if (state != "Pre-Alarm" and state != "Snooze"):
         print "Pre-Alarm - Setting state"
         state = "Pre-Alarm"
-        sonos_queue.put("Pre-Alarm")
+        ha_queue.put("Pre-Alarm")
         light_queue.put("Pre-Alarm")
     elif (delta <= 599):
       if (state != "Pre-Pre-Alarm"  and state != "Pre-Alarm" and state != "Snooze"):
