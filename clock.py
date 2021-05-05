@@ -193,8 +193,6 @@ while(True):
             ha_queue.put("Stop")
           else:
             ha_queue.put("Radio")
-          if (cfg['alarm']['switch_on_sec_radio']):
-            ha_queue.put("Sec_Radio")
           if (cfg['alarm']['switch_off_light']):
             light_queue.put("Off-Delay")
           if (cfg['core']['interaction_buttons']):
@@ -211,12 +209,10 @@ while(True):
             ha_queue.put("Stop")
           if (cfg['alarm']['switch_off_light']):
             light_queue.put("Off-Delay")
-          if (cfg['alarm']['switch_on_sec_radio']):
-            ha_queue.put("Sec_Radio")
           if (cfg['core']['interaction_buttons']):
             button_light_queue.put("off")
         else:
-            if (next_alarm is not None and int(next_alarm.strftime('%s')) - int(datetime.datetime.now().strftime('%s')) < 1800):
+            if (next_alarm is not None and int(next_alarm.strftime('%s')) - int(datetime.datetime.now().strftime('%s')) < 7200):
               print "There is another alarm soon, you must want to abort that"
               state = "Clear"
               next_alarm = None
@@ -227,14 +223,10 @@ while(True):
                 ha_queue.put("Stop")
               if (cfg['alarm']['switch_off_light']):
                 light_queue.put("Off-Delay")
-              if (cfg['alarm']['switch_on_sec_radio']):
-                ha_queue.put("Sec_Radio")
             else:
               if (datetime.datetime.now().hour >= 5 or datetime.datetime.now().hour < 11):
                 print "No upcoming alarm, performing secondary functions"
                 ha_queue.put("Wakeup")
-                if (cfg['alarm']['switch_on_sec_radio']):
-                  ha_queue.put("Sec_Radio")
       elif (distance_action == "Triggered"):
         if (state == "Alarm"):
           print "Snooze time"

@@ -42,14 +42,6 @@ def ha(queue, buzzer_queue):
         except:
           print "Well, that went wrong... But tis only a pre-alarm / radio request"
 
-      if (action == "Sec_Radio"):
-        try:
-          headers = { 'Authorization': cfg['homeassistant']['token'] }
-          content = {}
-          requests.post(cfg['homeassistant']['address']+"/api/services/script/dressing_room_radio_4_for_1hr", json=content, headers=headers)
-        except:
-          print "Well, that went wrong... But tis only a secondary"
-
       if (action == "Say_Time"):
         try:
           headers = { 'Authorization': cfg['homeassistant']['token'] }
