@@ -28,7 +28,10 @@ class S(BaseHTTPRequestHandler):
           self.server.lux_queue.put(int(self.path[12:]))
         self._set_headers()
         self.wfile.write("Request Processed\n")
-        
+    
+    def log_message(self, format, *args):
+        return
+
 def run(sonos_queue,light_queue,lux_queue,server_class=QueuingHTTPServer, handler_class=S, port=8000):
     server_address = ('', port)
     httpd = server_class(server_address, handler_class, sonos_queue,light_queue,lux_queue)
