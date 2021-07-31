@@ -20,12 +20,11 @@ class S(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        print self.path
+        #print self.path
         if (self.path == "/light_toggle"):
           print "Light Requested"
           self.server.light_queue.put("Toggle");
         if (self.path.startswith('/brightness/')):
-          print "Brightness adjustment: " + self.path[12:]
           self.server.lux_queue.put(int(self.path[12:]))
         self._set_headers()
         self.wfile.write("Request Processed\n")

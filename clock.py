@@ -28,6 +28,7 @@ from lib import display_text_seconds
 ### INIT WORK ###
 
 process_check = time.time()+60
+slow_process_check = time.time()+3600
 
 if (cfg['core']['mux']):
   #Setup I2C Multiplexer
@@ -380,7 +381,18 @@ while(True):
       button_process.daemon = True
       button_process.start()
       print "-> buttons PID", button_process.pid
-      
+
+  if (slow_process_check < time.time()):
+    slow_process_check = time.time()+3600
+    if not gcal_process.is_alive():
+      print "GCal process has failed, respawning"
+      gcal_queue = Queue()
+      gcal_process = Process(target=input_gcal.gcal, args=(gcal_queue,))
+      gcal_process.daemon = True
+      gcal_process.start()
+      print "-> gcal PID", gcal_process.pid
+
+
   # Wait
   if (state == "Alarm"):
     time.sleep(0.1)
