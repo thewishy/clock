@@ -336,6 +336,11 @@ while(True):
     # Write the display buffer to the hardware.  This must be called to
     # update the actual display LEDs.
     clock_segment.write_display()
+  except Exception as e:
+    print "Error handling Clock LCD"
+    print str(e)
+  try:
+
     alarm_segment.clear()
     if (state == "Clear"):
       alarm_segment.set_colon(True) 
@@ -361,7 +366,7 @@ while(True):
     alarm_segment.set_brightness(brightness)
     alarm_segment.write_display() 
   except Exception as e:
-    print "Error handling LCD"
+    print "Error handling Alarm LCD"
     print str(e)
   
   if (process_check < time.time()):
