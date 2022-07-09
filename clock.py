@@ -15,9 +15,9 @@ import sensor_lux
 import sensor_ntp
 import sensor_distance
 import sensor_buttons
+import sensor_mqtt
 import action_buzz
 import input_gcal
-import sensor_http
 import action_ha
 import action_light
 import action_button_lights
@@ -36,18 +36,28 @@ if (cfg['core']['mux']):
   #This problem wasn't really solved by the mux, running the IO at 5v sorted it though.. Anyway, it's wired in now...
   mux.i2c_mux_setup(0b00011111)
 
+# Setup Queues
+lux_queue = Queue()
+mqtt_queue = Queue()
+light_status_queue =  Queue()
 
+#Setup MQTT
+if (cfg['core']['mqtt']):
+  mqtt_process = Process(target=sensor_mqtt.mqtt_start, args=(mqtt_queue,lux_queue,light_status_queue))
+  mqtt_process.daemon = True
+  mqtt_process.start()
+print "-> MQTT PID", mqtt_process.pid
+light_on = 0
 
 #Setup Lux Monitor process
-lux_queue = Queue()
 lux = 0
 if (cfg['core']['lux']):
-  lux_process = Process(target=sensor_lux.check_brightness, args=(lux_queue,))
+  lux_process = Process(target=sensor_lux.check_brightness, args=(lux_queue,mqtt_queue))
   lux_process.daemon = True
   lux_process.start()
   print "-> Lux PID", lux_process.pid
 brightness = 1
-light_on = 0
+
 
 #Setup NTP Monitor process
 ntp_queue = Queue()
@@ -74,7 +84,6 @@ print "-> buzzer PID", buzzer_process.pid
 
 #Setup Light Process
 light_queue = Queue()
-light_status_queue =  Queue()
 if (cfg['core']['light']):
   light_process = Process(target=action_light.light, args=(light_queue,light_status_queue))
   light_process.daemon = True
@@ -109,13 +118,6 @@ if (cfg['core']['interaction_buttons']):
   button_light_process.daemon = True
   button_light_process.start()
   print "-> button light PID", button_process.pid
-
-#Setup HTTP Process
-if (cfg['core']['http']):
-  heating_process = Process(target=sensor_http.run, args=(ha_queue,light_queue,lux_queue))
-  heating_process.daemon = True
-  heating_process.start()
-  print "-> HTTP PID", heating_process.pid
 
 #Setup Status
 # states [Clear, Pre-Alarm, Alarm, Snooze, No-Alarm]
@@ -159,7 +161,7 @@ while(True):
     
   while (not light_status_queue.empty()):
     light_on=light_status_queue.get()
-    #print "Light: ", light_on
+    print "Light: ", light_on
     brightness = min(lux+light_on*2,15)
     #print "Brightness", brightness
   
