@@ -85,7 +85,7 @@ print "-> buzzer PID", buzzer_process.pid
 #Setup Light Process
 light_queue = Queue()
 if (cfg['core']['light']):
-  light_process = Process(target=action_light.light, args=(light_queue,light_status_queue))
+  light_process = Process(target=action_light.light, args=(light_queue))
   light_process.daemon = True
   light_process.start()
   print "-> light PID", light_process.pid
