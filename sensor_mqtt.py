@@ -23,9 +23,9 @@ def mqtt_start(publishing_queue_local,lux_queue_local,light_status_queue_local):
     mqtt_client.loop()
     while(not publishing_queue.empty()):
       action=publishing_queue.get()
-      print action
+      # print action
       if(action.split(":")[0]=="Lux"):
-        print "Pushing Lux value to MQTT"
+        # print "Pushing Lux value to MQTT"
         mqtt_client.publish(cfg['lux']['topic'],action.split(":")[1])
       else:
         print "Unhandled Action"
@@ -45,7 +45,7 @@ def on_mqtt_message(mqtt_client, userdata, message):
       light_status_queue.put(0)
   elif (message.topic == cfg['lux']['topic']):
     lux = int(message.payload.decode("utf-8"))
-    print lux
+    # print lux
     lux_queue.put(lux)
 
 def on_queue_message(mqtt_client):

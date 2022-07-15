@@ -284,6 +284,7 @@ while(True):
       state = "No-Alarm"
       next_alarm = None
       snooze_until = None
+      button_light_queue.put("off")
       # Switch off Radio
       ha_queue.put("Stop")
     elif (delta <= 0):
