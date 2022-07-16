@@ -17,10 +17,10 @@ import sensor_distance
 import sensor_buttons
 import sensor_mqtt
 import action_buzz
-import input_gcal
 import action_ha
 import action_light
 import action_button_lights
+import lib_cal
 from lib import display_text
 from lib import display_text_seconds
 
@@ -28,7 +28,7 @@ from lib import display_text_seconds
 ### INIT WORK ###
 
 process_check = time.time()+60
-slow_process_check = time.time()+3600
+next_alarm = lib_cal.dt_parse(lib_cal.read_from_backup())
 
 if (cfg['core']['mux']):
   #Setup I2C Multiplexer
@@ -40,10 +40,11 @@ if (cfg['core']['mux']):
 lux_queue = Queue()
 mqtt_queue = Queue()
 light_status_queue =  Queue()
+gcal_queue = Queue()
 
 #Setup MQTT
 if (cfg['core']['mqtt']):
-  mqtt_process = Process(target=sensor_mqtt.mqtt_start, args=(mqtt_queue,lux_queue,light_status_queue))
+  mqtt_process = Process(target=sensor_mqtt.mqtt_start, args=(mqtt_queue,lux_queue,light_status_queue,gcal_queue))
   mqtt_process.daemon = True
   mqtt_process.start()
 print "-> MQTT PID", mqtt_process.pid
@@ -66,14 +67,6 @@ ntp_process.daemon = True
 ntp_process.start()
 print "-> NTP PID", ntp_process.pid
 ntp_bad = 1
-
-#Setup Google Cal process
-gcal_queue = Queue()
-gcal_process = Process(target=input_gcal.gcal, args=(gcal_queue,))
-gcal_process.daemon = True
-gcal_process.start()
-next_alarm = None
-print "-> gcal PID", gcal_process.pid
 
 #Setup Buzzer
 buzzer_queue = Queue()
@@ -161,7 +154,7 @@ while(True):
     
   while (not light_status_queue.empty()):
     light_on=light_status_queue.get()
-    print "Light: ", light_on
+    #print "Light: ", light_on
     brightness = min(lux+light_on*2,15)
     #print "Brightness", brightness
   
@@ -175,8 +168,8 @@ while(True):
       print "Alarm is none, which is OK"
       next_alarm = None
     elif (int(test_alarm.strftime('%s')) - int(datetime.datetime.now().strftime('%s')) >=0):
-      print "Alarm is good"
       next_alarm=test_alarm
+      print "Alarm is good, next alarm", next_alarm
     else:
       print "Alarm is in the past, skipping"
 
@@ -389,17 +382,6 @@ while(True):
       button_process.daemon = True
       button_process.start()
       print "-> buttons PID", button_process.pid
-
-  if (slow_process_check < time.time()):
-    slow_process_check = time.time()+3600
-    if not gcal_process.is_alive():
-      print "GCal process has failed, respawning"
-      gcal_queue = Queue()
-      gcal_process = Process(target=input_gcal.gcal, args=(gcal_queue,))
-      gcal_process.daemon = True
-      gcal_process.start()
-      print "-> gcal PID", gcal_process.pid
-
 
   # Wait
   if (state == "Alarm"):

@@ -1,19 +1,20 @@
 from tsl2561 import TSL2561 
-import time
 import paho.mqtt.client as mqtt
+import lib_cal
 from cfgmgr import get_config
 cfg = get_config()
 
-def mqtt_start(publishing_queue_local,lux_queue_local,light_status_queue_local):
+def mqtt_start(publishing_queue_local,lux_queue_local,light_status_queue_local,gcal_queue_local):
   global publishing_queue
   global lux_queue
   global light_status_queue
   global mqtt_client
+  global gcal_queue
   publishing_queue = publishing_queue_local
   lux_queue = lux_queue_local
   light_status_queue = light_status_queue_local
+  gcal_queue = gcal_queue_local
 
-  
   mqtt_client = mqtt.Client(client_id=cfg['core']['name']+"_sensor_mqtt")
   mqtt_client.on_connect = on_mqtt_connect
   
@@ -33,11 +34,12 @@ def mqtt_start(publishing_queue_local,lux_queue_local,light_status_queue_local):
 def on_mqtt_connect(client, userdata, flags, rc):
   #print("Subscribed")
   mqtt_client.subscribe(cfg['light']['topic'])
+  mqtt_client.subscribe(cfg['calendar']['topic'])
   if (cfg['lux']['role'] == "secondary"):
     mqtt_client.subscribe(cfg['lux']['topic'])
 
 def on_mqtt_message(mqtt_client, userdata, message):
-  # print message.topic
+  print "Recieved Message on Topic", message.topic
   if (message.topic == cfg['light']['topic']):
     if (message.payload.decode("utf-8")=="on"):
       light_status_queue.put(1)
@@ -47,6 +49,17 @@ def on_mqtt_message(mqtt_client, userdata, message):
     lux = int(message.payload.decode("utf-8"))
     # print lux
     lux_queue.put(lux)
+  elif (message.topic == cfg['calendar']['topic']):
+    message_decode = message.payload.decode("utf-8")
+    # print message_decode
+    if (message_decode == "No Alarm Set"):
+      print "No Alarm Message, return None"
+      gcal_queue.put(None)
+      lib_cal.write_to_backup("None")
+    else:
+      gcal_queue.put(lib_cal.dt_parse(message_decode))
+      lib_cal.write_to_backup(message_decode)
+    
 
 def on_queue_message(mqtt_client):
   try:
