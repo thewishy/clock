@@ -23,6 +23,7 @@ import action_button_lights
 import lib_cal
 from lib import display_text
 from lib import display_text_seconds
+from lib import notify_if_changed
 
 
 ### INIT WORK ###
@@ -41,10 +42,11 @@ lux_queue = Queue()
 mqtt_queue = Queue()
 light_status_queue =  Queue()
 gcal_queue = Queue()
+interaction_queue = Queue()
 
 #Setup MQTT
 if (cfg['core']['mqtt']):
-  mqtt_process = Process(target=sensor_mqtt.mqtt_start, args=(mqtt_queue,lux_queue,light_status_queue,gcal_queue))
+  mqtt_process = Process(target=sensor_mqtt.mqtt_start, args=(mqtt_queue,lux_queue,light_status_queue,gcal_queue,interaction_queue))
   mqtt_process.daemon = True
   mqtt_process.start()
 print "-> MQTT PID", mqtt_process.pid
@@ -58,7 +60,6 @@ if (cfg['core']['lux']):
   lux_process.start()
   print "-> Lux PID", lux_process.pid
 brightness = 1
-
 
 #Setup NTP Monitor process
 ntp_queue = Queue()
@@ -92,7 +93,6 @@ print "-> Home Assistant PID", ha_process.pid
 
 #Setup Distance Monitor process
 if (cfg['core']['interaction_distance']):
-  interaction_queue = Queue()
   distance_process = Process(target=sensor_distance.check_distance, args=(interaction_queue,buzzer_queue,light_queue))
   distance_process.daemon = True
   distance_process.start()
@@ -100,7 +100,6 @@ if (cfg['core']['interaction_distance']):
 
 #Setup Button Monitor process
 if (cfg['core']['interaction_buttons']):
-  interaction_queue = Queue()
   button_process = Process(target=sensor_buttons.check_buttons, args=(interaction_queue,buzzer_queue,light_queue,ha_queue))
   button_process.daemon = True
   button_process.start()
@@ -114,7 +113,7 @@ if (cfg['core']['interaction_buttons']):
 
 #Setup Status
 # states [Clear, Pre-Alarm, Alarm, Snooze, No-Alarm]
-state = "Clear"
+state = notify_if_changed(mqtt_queue,"","Clear","State:")
 warned = "No"
 snooze_until = None
 
@@ -179,7 +178,7 @@ while(True):
       if (distance_action == "Double"):
         if (state == "Alarm"):
           print "Clearing Alarm"
-          state = "Clear"
+          state = notify_if_changed(mqtt_queue,state,"Clear","State:")
           # Expectation is that there is either a new time held in the gcal queue, or that it will send one soon...
           next_alarm = None
           snooze_until = None
@@ -196,7 +195,7 @@ while(True):
           ha_queue.put("Wakeup")
         elif (state=="Snooze" or state=="Pre-Alarm" or state=="Pre-Pre-Alarm"):
           print "Clearing Alarm"
-          state = "Clear"
+          state = notify_if_changed(mqtt_queue,state,"Clear","State:")
           next_alarm = None
           snooze_until = None
           warned = "No"
@@ -210,7 +209,7 @@ while(True):
         else:
             if (next_alarm is not None and int(next_alarm.strftime('%s')) - int(datetime.datetime.now().strftime('%s')) < 7200):
               print "There is another alarm soon, you must want to abort that"
-              state = "Clear"
+              state = notify_if_changed(mqtt_queue,state,"Clear","State:")
               next_alarm = None
               snooze_until = None
               warned = "No"
@@ -227,7 +226,7 @@ while(True):
         if (state == "Alarm"):
           print "Snooze time"
           ha_queue.put("Radio")
-          state = "Snooze"
+          state = notify_if_changed(mqtt_queue,state,"Snooze","State:")
           warned = "No"
           snooze_until = datetime.datetime.now() + datetime.timedelta(minutes=5)
           print "Snoozing until: ", snooze_until
@@ -236,11 +235,11 @@ while(True):
           warned = "No"
           print "More Snoozing until: ", snooze_until
         elif (state=="Pre-Alarm"):
-         state = "Snooze"
+         state = notify_if_changed(mqtt_queue,state,"Snooze","State:")
          snooze_until = next_alarm + datetime.timedelta(minutes=5)
          warned = "No"
         elif (state=="Pre-Pre-Alarm"):
-         state = "Snooze"
+         state = notify_if_changed(mqtt_queue,state,"Snooze","State:")
          snooze_until = next_alarm + datetime.timedelta(minutes=5)
          warned = "No"
         else:
@@ -257,7 +256,7 @@ while(True):
     snoozedelta = int(snooze_until.strftime('%s')) - int(datetime.datetime.now().strftime('%s'))
     if (snoozedelta <= 0):
       snooze_until = None
-      state = "Alarm"
+      state = notify_if_changed(mqtt_queue,state,"Alarm","State:")
       ha_queue.put("Alarm")
     elif (snoozedelta <= 60):
       print "SnoozeDelta should warn"
@@ -274,7 +273,7 @@ while(True):
     if (delta < -3600):
       print "It's been an hour, clearing alarm"
       buzzer_queue.put("beep_thrice")
-      state = "No-Alarm"
+      state = notify_if_changed(mqtt_queue,state,"No-Alarm","State:")
       next_alarm = None
       snooze_until = None
       button_light_queue.put("off")
@@ -283,7 +282,7 @@ while(True):
     elif (delta <= 0):
       if (state != "Alarm" and state != "Snooze"):
         print "Alarm - Setting State"
-        state = "Alarm"
+        state = notify_if_changed(mqtt_queue,state,"Alarm","State:")
         ha_queue.put("Alarm")
     # Beep a minute before alarm
     elif (delta <=60):
@@ -293,7 +292,7 @@ while(True):
     elif (delta <= 299):
       if (state != "Pre-Alarm" and state != "Snooze"):
         print "Pre-Alarm - Setting state"
-        state = "Pre-Alarm"
+        state = notify_if_changed(mqtt_queue,state,"Pre-Alarm","State:")
         ha_queue.put("Pre-Alarm")
         light_queue.put("Pre-Alarm")
     elif (delta <= 599):
@@ -308,11 +307,11 @@ while(True):
     elif (delta >= 86400):
       if (state != "No-Alarm"):
         print ">24hr No Alarm - Setting state"
-        state = "No-Alarm"
+        state = notify_if_changed(mqtt_queue,state,"No-Alarm","State:")
     else:
-      state = "Clear"
+      state = notify_if_changed(mqtt_queue,state,"Clear","State:")
   else:
-    state = "No-Alarm"
+    state = notify_if_changed(mqtt_queue,state,"No-Alarm","State:")
     
   try:
     # Set fixed decimal, top right of display

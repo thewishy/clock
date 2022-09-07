@@ -2,12 +2,15 @@ from multiprocessing import Queue
 import time
 import datetime
 
-def notify_if_changed(queue, oldvalue, newvalue):
+def notify_if_changed(queue, oldvalue, newvalue, prepend=None):
   if (oldvalue != newvalue):
     #print "Values differ!"
-    queue.put(newvalue)
+    if (prepend==None):
+      queue.put(newvalue)
+    else:
+      queue.put(prepend+newvalue)
   return newvalue
-  
+
 def display_text(inputdatetime):
   #if (inputdatetime is None):
   #  return "----"
