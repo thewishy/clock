@@ -60,6 +60,16 @@ def ha(queue, buzzer_queue):
         except:
           print "Well, that went wrong... But tis only a stop"
 
+      if (action == "Cancel_Partner"):
+        try:
+          print "Cancelling Partner Alarm"
+          headers = { 'Authorization': cfg['homeassistant']['token'] }
+          content = {"entity_id":"input_button.xyz_clock_cancel"}
+          requests.post(cfg['homeassistant']['address']+"/api/services/input_button/press", json=content, headers=headers)
+        except Exception as e: 
+          print(e)
+          print "Well, that went wrong... But tis only a partner alarm"
+
       if (action == "Wakeup"):
         try:
           print "Calling Wakeup Script"

@@ -73,6 +73,9 @@ def light(queue):
           
       if (action == "Off"):
         light_off()
+
+      if (action == "Low"):
+        light_low()
         
       if (action == "Off-Delay"):
         print "Setting time delay"

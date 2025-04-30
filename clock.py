@@ -204,6 +204,8 @@ while(True):
             ha_queue.put("Stop")
           if (cfg['alarm']['switch_off_light']):
             light_queue.put("Off-Delay")
+          if (cfg['alarm']['switch_on_light']):
+            light_queue.put("Low")
           if (cfg['core']['interaction_buttons']):
             button_light_queue.put("off")
         else:
@@ -216,6 +218,8 @@ while(True):
               ha_queue.put("Wakeup")
               if (cfg['alarm']['switch_off_radio']):
                 ha_queue.put("Stop")
+              if (cfg['alarm']['switch_on_light']):
+                light_queue.put("Low")
               if (cfg['alarm']['switch_off_light']):
                 light_queue.put("Off-Delay")
             else:

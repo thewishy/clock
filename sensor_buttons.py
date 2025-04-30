@@ -40,7 +40,7 @@ def blue_button_callback(channel):
     print("Noise Detected Blue Channel")
   else:
     print("Blue button was pushed!")
-    sonos_queue.put("Say_Time")
+    sonos_queue.put("Cancel_Partner")
 
 def check_buttons(local_queue, local_buzzer_queue, local_light_queue, local_sonos_queue):
   global queue

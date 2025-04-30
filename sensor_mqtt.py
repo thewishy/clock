@@ -19,6 +19,7 @@ def mqtt_start(publishing_queue_local,lux_queue_local,light_status_queue_local,g
 
   mqtt_client = mqtt.Client(client_id=cfg['core']['name']+"_sensor_mqtt")
   mqtt_client.on_connect = on_mqtt_connect
+  mqtt_client.will_set(cfg['mqtt']['state_topic'],"Offline",retain=True)
   
   mqtt_client.connect(cfg['mqtt']['server'], 1883, 60)
   mqtt_client.on_message = on_mqtt_message
